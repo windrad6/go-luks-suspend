@@ -21,18 +21,7 @@ cryptsetup luksSuspend "${cryptname}"
 echo mem > /sys/power/state
 
 # Resume root device
-n=0
-while true; do
-    if cryptsetup luksResume "${cryptname}"; then
-        break
-    fi
-
-    n=$((n + 1))
-
-    if test $n -ge 3; then
-        reboot
-    fi
-done
+cryptsetup luksResume "${cryptname}" || reboot
 
 # Stop udev from initramfs, as the real daemon from rootfs will be restarted
 udevadm control --exit
