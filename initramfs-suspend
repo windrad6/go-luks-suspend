@@ -1,20 +1,38 @@
 #!/usr/bin/ash
 
+reboot() {
+    echo 128 > /proc/sys/kernel/sysrq
+    echo b > /proc/sysrq-trigger
+}
+
 # Start udev from initramfs
 /usr/lib/systemd/systemd-udevd --daemon --resolve-names=never
 
 # Retrieve cryptdevice name from boot cmdline
 cryptname=$(sed -n 's/.*cryptdevice=[^: ]*:\([^: ]*\).*$/\1/p' /proc/cmdline)
 
+# Abort if we do not know the cryptdevice
+test -n "${cryptname}" || reboot
+
 # Suspend root device
-[ -z "${cryptname}" ] || cryptsetup luksSuspend "${cryptname}"
+cryptsetup luksSuspend "${cryptname}"
 
 # Suspend the system
 echo mem > /sys/power/state
 
 # Resume root device
-[ -z "${cryptname}" ] ||
-    while ! cryptsetup luksResume "${cryptname}"; do sleep 2; done
+n=0
+while true; do
+    if cryptsetup luksResume "${cryptname}"; then
+        break
+    fi
+
+    n=$((n + 1))
+
+    if test $n -ge 3; then
+        reboot
+    fi
+done
 
 # Stop udev from initramfs, as the real daemon from rootfs will be restarted
 udevadm control --exit
