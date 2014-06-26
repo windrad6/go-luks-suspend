@@ -5,14 +5,13 @@ reboot() {
     echo b > /proc/sysrq-trigger
 }
 
-# Start udev from initramfs
-/usr/lib/systemd/systemd-udevd --daemon --resolve-names=never
-
-# Retrieve cryptdevice name from boot cmdline
-cryptname=$(sed -n 's/.*cryptdevice=[^: ]*:\([^: ]*\).*$/\1/p' /proc/cmdline)
+cryptname="${1}"
 
 # Abort if we do not know the cryptdevice
 test -n "${cryptname}" || reboot
+
+# Start udev from initramfs
+/usr/lib/systemd/systemd-udevd --daemon --resolve-names=never
 
 # Suspend root device
 cryptsetup luksSuspend "${cryptname}"
