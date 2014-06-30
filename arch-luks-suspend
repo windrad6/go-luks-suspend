@@ -39,7 +39,7 @@ ext4_cryptdevice_mount_options() {
 ################################################################################
 ## Main script
 
-[ -e "${INITRAMFS_DIR}/suspend" ] || exec /usr/lib/systemd/systemd-suspend suspend
+[ -e "${INITRAMFS_DIR}/suspend" ] || exec /usr/lib/systemd/systemd-sleep suspend
 
 # Prepare chroot
 trap umount_initramfs EXIT
