@@ -57,6 +57,11 @@ systemctl stop systemd-udevd-control.socket
 systemctl stop systemd-udevd-kernel.socket
 systemctl stop systemd-udevd.service
 
+# Stop journald from attempting to write to the suspended device
+systemctl stop systemd-journald-dev-log.socket
+systemctl stop systemd-journald.socket
+systemctl stop systemd-journald.service
+
 # Journalled ext4 filesystems in kernel versions 3.11+ will block suspend
 # if mounted with `barrier=1`, which is the default. Temporarily remount with
 # `barrier=0` if this is true of the crypt fs.
@@ -78,10 +83,15 @@ if ((REMOUNT)); then
     mount -o remount,"$MOUNT_OPTS",barrier=1 /
 fi
 
+# Restart journald
+systemctl start systemd-journald.service
+systemctl start systemd-journald.socket
+systemctl start systemd-journald-dev-log.socket
+
 # Restart udev
-systemctl start systemd-udevd-control.socket
-systemctl start systemd-udevd-kernel.socket
 systemctl start systemd-udevd.service
+systemctl start systemd-udevd-kernel.socket
+systemctl start systemd-udevd-control.socket
 
 # Run post-suspend scripts
 run_dir "${SYSTEM_SLEEP_PATH}" post suspend
