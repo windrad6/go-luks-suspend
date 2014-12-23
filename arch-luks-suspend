@@ -97,6 +97,3 @@ udev_service start
 
 # Run post-suspend scripts
 run_dir "${SYSTEM_SLEEP_PATH}" post suspend
-
-# Unlock user sessions
-loginctl unlock-sessions
