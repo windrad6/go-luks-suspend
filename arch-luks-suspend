@@ -21,6 +21,13 @@ run_dir() {
     find "${dir}" -type f -executable -exec "{}" "$@" ";"
 }
 
+mount_initramfs() {
+    local p
+    for p in "${BIND_PATHS[@]}"; do
+        mount -o bind "${p}" "${INITRAMFS_DIR}${p}"
+    done
+}
+
 # Restore chroot
 umount_initramfs() {
     local p
@@ -59,9 +66,7 @@ journald_service() {
 
 # Prepare chroot
 trap umount_initramfs EXIT
-for p in ${BIND_PATHS}; do
-    mount -o bind ${p} "${INITRAMFS_DIR}${p}"
-done
+mount_initramfs
 
 # Run pre-suspend scripts
 run_dir "${SYSTEM_SLEEP_PATH}" pre suspend
