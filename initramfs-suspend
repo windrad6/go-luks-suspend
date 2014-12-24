@@ -1,23 +1,22 @@
 #!/usr/bin/ash
 
+CRYPTMOUNTS="$1"
+
 reboot() { echo b > /proc/sysrq-trigger; }
-
-cryptname="${1}"
-
-# Abort if we do not know the cryptdevice
-test -n "${cryptname}" || reboot
 
 # Start udev from initramfs
 /usr/lib/systemd/systemd-udevd --daemon --resolve-names=never
 
-# Suspend root device
-cryptsetup luksSuspend "${cryptname}"
+# Suspend crypt devices
+while IFS=$'\t' read -r mtpt name; do
+    cryptsetup luksSuspend "$name"
+done < "$CRYPTMOUNTS"
 
 # Suspend the system
 echo mem > /sys/power/state
 
-# Resume root device
-cryptsetup luksResume "${cryptname}" || reboot
+# Resume root device only
+cryptsetup luksResume "$(awk -F"\t" '/\/\t/{ print $2 }' "$CRYPTMOUNTS")" || reboot
 
 # Stop udev from initramfs, as the real daemon from rootfs will be restarted
 udevadm control --exit
