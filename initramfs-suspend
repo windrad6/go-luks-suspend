@@ -15,7 +15,7 @@ done < "$CRYPTMOUNTS"
 # Suspend the system
 echo mem > /sys/power/state
 
-# Resume root device only
+# Resume root device, else reboot
 cryptsetup luksResume "$(awk -F"\t" '/\/\t/{ print $2 }' "$CRYPTMOUNTS")" || reboot
 
 # Stop udev from initramfs, as the real daemon from rootfs will be restarted
