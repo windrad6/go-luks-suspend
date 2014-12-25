@@ -1,14 +1,17 @@
 #!/bin/bash
 
-set -e -u
-trap 'echo "Press ENTER to continue."; read dummy' ERR
-
 ################################################################################
 ## Parameters and helper functions
 
 INITRAMFS_DIR=/run/initramfs
 SYSTEM_SLEEP_PATH=/usr/lib/systemd/system-sleep
 BIND_PATHS=(/sys /proc /dev /run)
+
+panic() { while :; do echo o > /proc/sysrq-trigger; done }
+
+# Shutdown on script errors
+set -e -E -u
+trap panic ERR
 
 # run_dir DIR ARGS...
 # Run all executable scripts in directory DIR with arguments ARGS
@@ -25,7 +28,6 @@ mount_initramfs() {
     done
 }
 
-# Restore chroot
 umount_initramfs() {
     local p
     for p in "${BIND_PATHS[@]}"; do
@@ -131,7 +133,7 @@ journald_service() {
 ################################################################################
 ## Main script
 
-[ -e "${INITRAMFS_DIR}/suspend" ] || echo b > /proc/sysrq-trigger
+[[ -x "${INITRAMFS_DIR}/suspend" ]] || panic
 
 # NB. We will pass this variable unquoted to do word splitting
 CRYPTDEVICES="$(cryptdevices)"
