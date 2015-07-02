@@ -114,15 +114,6 @@ resume_devices_with_keyfiles() {
     done
 }
 
-# Stop udev service and prevent it to be autostarted.
-# Otherwise, luksResume will hang waiting for udev, which is itself waiting
-# for I/O on the root device.
-udev_service() {
-    systemctl "$1" systemd-udevd-control.socket
-    systemctl "$1" systemd-udevd-kernel.socket
-    systemctl "$1" systemd-udevd.service
-}
-
 # Prevent journald from attempting to write to the suspended device
 journald_service() {
     systemctl "$1" systemd-journald-dev-log.socket
@@ -146,7 +137,6 @@ mount_initramfs
 run_dir "${SYSTEM_SLEEP_PATH}" pre suspend
 
 # Stop services that may block suspend
-udev_service stop
 journald_service stop
 
 # Synchronize filesystems before luksSuspend
@@ -175,7 +165,6 @@ remount_blocking_devices barrier=1 $CRYPTDEVICES
 
 # Restart stopped services
 journald_service start
-udev_service start
 
 # Run post-suspend scripts
 run_dir "${SYSTEM_SLEEP_PATH}" post suspend
