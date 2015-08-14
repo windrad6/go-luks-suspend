@@ -51,6 +51,10 @@ needs_remount() {
     fi
 }
 
+crypttabentries() {
+    grep -v '^[ \t]*#\|^[ \t]*$' /etc/crypttab
+}
+
 # Active crypt devices, each as a single word with 7 fields separated by 0x1C:
 # [/sys-dm-dir, dm-name, mountpoint, fstype, mount-options, keyfile, remount?]
 cryptdevices() {
@@ -62,9 +66,11 @@ cryptdevices() {
     done < /proc/mounts
 
     # HACK: Extract name and pass fields from crypttab
-    while read -r key __ val __; do
-        keyfiles["$key"]="$val"
-    done < <(grep -v '^[ \t]*#\|^[ \t]*$' /etc/crypttab)
+    if crypttabentries > /dev/null; then
+        while read -r key __ val __; do
+            keyfiles["$key"]="$val"
+        done < <(crypttabentries)
+    fi
 
     for dm in /sys/block/*/dm; do
         if grep ^CRYPT "$dm/uuid" >/dev/null && ! is_suspended "$dm"; then
