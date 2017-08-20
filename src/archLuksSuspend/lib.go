@@ -3,6 +3,7 @@ package archLuksSuspend
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,16 +12,20 @@ import (
 )
 
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
-func Poweroff() {
+func Poweroff(debugmode bool) {
+	if debugmode {
+		fmt.Fprintln(os.Stderr, "POWEROFF")
+		os.Exit(1)
+	}
 	for {
 		_ = ioutil.WriteFile("/proc/sysrq-trigger", []byte{'o'}, 0600)
 	}
 }
 
 // SuspendToRAM attempts to suspend the system via /sys/power/state
-func SuspendToRAM() {
+func SuspendToRAM(debugmode bool) {
 	if err := ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600); err != nil {
-		Poweroff()
+		Poweroff(debugmode)
 	}
 }
 

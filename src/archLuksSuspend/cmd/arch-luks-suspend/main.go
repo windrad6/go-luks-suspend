@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,10 +17,12 @@ const (
 )
 
 var BindPaths = []string{"/sys", "/proc", "/dev", "/run"}
+var debugmode = false
 
 func assert(err error) {
 	if err != nil {
-		archLuksSuspend.Poweroff()
+		fmt.Fprintln(os.Stderr, err)
+		archLuksSuspend.Poweroff(debugmode)
 	}
 }
 
@@ -85,5 +88,10 @@ func runSystemSuspendScripts(scriptarg string) error {
 }
 
 func main() {
+	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
+	flag.Parse()
+	debugmode = *debug
+
+	// Ensure initramfs program exists
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsPath, "suspend")))
 }
