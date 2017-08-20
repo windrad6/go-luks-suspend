@@ -2,8 +2,8 @@ pushd . &>/dev/null
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-if [[ "$GOPATH" != "$PWD" ]]; then
-    export GOPATH="$PWD"
+if [[ "$GOPATH" != "$PWD":* ]]; then
+    export GOPATH="$PWD:$GOPATH"
     echo "GOPATH=$GOPATH"
 fi
 

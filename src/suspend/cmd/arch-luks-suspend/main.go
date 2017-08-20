@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,13 +16,6 @@ const (
 )
 
 var BindPaths = []string{"/sys", "/proc", "/dev", "/run"}
-
-type ScriptType int
-
-const (
-	PreSuspend ScriptType = iota
-	PostSuspend
-)
 
 func assert(err error) {
 	if err != nil {
@@ -62,18 +54,7 @@ func checkRootOwnedAndExecutable(fi os.FileInfo) error {
 	return nil
 }
 
-func runSystemSuspendScripts(stype ScriptType) error {
-	var arg1 string
-
-	switch stype {
-	case PreSuspend:
-		arg1 = "pre"
-	case PostSuspend:
-		arg1 = "post"
-	default:
-		return errors.New("unknown ScriptType")
-	}
-
+func runSystemSuspendScripts(scriptarg string) error {
 	dir, err := os.Open(systemSleepPath)
 	if err != nil {
 		return err
@@ -94,7 +75,7 @@ func runSystemSuspendScripts(stype ScriptType) error {
 			continue
 		}
 
-		err := exec.Command(filepath.Join(systemSleepPath, fs[i].Name()), arg1, "suspend").Run()
+		err := exec.Command(filepath.Join(systemSleepPath, fs[i].Name()), scriptarg, "suspend").Run()
 		if err != nil {
 			return err
 		}
