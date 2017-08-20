@@ -41,7 +41,7 @@ func GetCryptDevices() ([]CryptDevice, error) {
 		return nil, err
 	}
 
-	cdmap := map[string]*CryptDevice{}
+	cdmap := make(map[string]*CryptDevice, 2*len(cds))
 	for i := range cds {
 		cdmap[cds[i].Name] = &cds[i]
 		cdmap["/dev/mapper/"+cds[i].Name] = &cds[i] // to match entry in /proc/mounts
