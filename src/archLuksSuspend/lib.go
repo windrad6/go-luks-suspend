@@ -36,15 +36,15 @@ type CryptDevice struct {
 
 // GetCryptDevices returns active non-root crypt devices from /etc/crypttab
 func GetCryptDevices() ([]CryptDevice, error) {
-	cds, err := cryptDevicesFromSysfs()
+	cryptdevices, err := cryptDevicesFromSysfs()
 	if err != nil {
 		return nil, err
 	}
 
-	cdmap := make(map[string]*CryptDevice, 2*len(cds))
-	for i := range cds {
-		cdmap[cds[i].Name] = &cds[i]
-		cdmap["/dev/mapper/"+cds[i].Name] = &cds[i] // to match entry in /proc/mounts
+	cdmap := make(map[string]*CryptDevice, 2*len(cryptdevices))
+	for i := range cryptdevices {
+		cdmap[cryptdevices[i].Name] = &cryptdevices[i]
+		cdmap["/dev/mapper/"+cryptdevices[i].Name] = &cryptdevices[i] // to match entry in /proc/mounts
 	}
 
 	if err := addKeyfilesFromCrypttab(cdmap, "/etc/crypttab"); err != nil {
@@ -55,7 +55,7 @@ func GetCryptDevices() ([]CryptDevice, error) {
 		return nil, err
 	}
 
-	return cds, nil
+	return cryptdevices, nil
 }
 
 func (cd *CryptDevice) IsSuspended() (bool, error) {
@@ -75,7 +75,7 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 		return nil, nil
 	}
 
-	cds := make([]CryptDevice, 0, len(dirs))
+	cryptdevices := make([]CryptDevice, 0, len(dirs))
 
 	for i := range dirs {
 		// Skip if not a LUKS device
@@ -102,10 +102,10 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 		}
 
 		cd.Name = string(bytes.TrimSpace(name))
-		cds = append(cds, cd)
+		cryptdevices = append(cryptdevices, cd)
 	}
 
-	return cds, nil
+	return cryptdevices, nil
 }
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
