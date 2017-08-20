@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"suspend"
+	"archLuksSuspend"
 )
 
 const (
@@ -19,7 +19,7 @@ var BindPaths = []string{"/sys", "/proc", "/dev", "/run"}
 
 func assert(err error) {
 	if err != nil {
-		suspend.Poweroff()
+		archLuksSuspend.Poweroff()
 	}
 }
 

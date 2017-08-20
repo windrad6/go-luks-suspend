@@ -1,4 +1,4 @@
-package suspend
+package archLuksSuspend
 
 import (
 	"bufio"
