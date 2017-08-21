@@ -13,12 +13,12 @@ import (
 	"archLuksSuspend"
 )
 
-const initramfsPath = "/run/initramfs"
+const initramfsDir = "/run/initramfs"
 const cryptmountsPath = "/run/initramfs/run/cryptmounts.json"
-const systemSleepPath = "/usr/lib/systemd/system-sleep"
+const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
 var debugmode = false
-var bindPaths = []string{"/sys", "/proc", "/dev", "/run"}
+var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
 var systemdServices = []string{
 	// journald may attempt to write to the suspended device
 	"systemd-journald-dev-log.socket",
@@ -65,7 +65,7 @@ func checkRootOwnedAndExecutable(fi os.FileInfo) error {
 }
 
 func runSystemSuspendScripts(scriptarg string) error {
-	dir, err := os.Open(systemSleepPath)
+	dir, err := os.Open(systemSleepDir)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 			continue
 		}
 
-		err := exec.Command(filepath.Join(systemSleepPath, fs[i].Name()), scriptarg, "suspend").Run()
+		err := exec.Command(filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend").Run()
 		if err != nil {
 			return err
 		}
@@ -95,8 +95,8 @@ func runSystemSuspendScripts(scriptarg string) error {
 }
 
 func bindInitramfs() error {
-	for _, dir := range bindPaths {
-		err := syscall.Mount(dir, filepath.Join(initramfsPath, dir), "", syscall.MS_BIND, "")
+	for _, dir := range bindDirs {
+		err := syscall.Mount(dir, filepath.Join(initramfsDir, dir), "", syscall.MS_BIND, "")
 		if err != nil {
 			return err
 		}
@@ -105,8 +105,8 @@ func bindInitramfs() error {
 }
 
 func unbindInitramfs() error {
-	for _, dir := range bindPaths {
-		err := syscall.Unmount(filepath.Join(initramfsPath, dir), 0)
+	for _, dir := range bindDirs {
+		err := syscall.Unmount(filepath.Join(initramfsDir, dir), 0)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func main() {
 	debugmode = *debug
 
 	// Ensure initramfs program exists
-	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsPath, "suspend")))
+	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
 	cryptdevices, err := archLuksSuspend.GetCryptDevices()
 	assert(err)
@@ -179,7 +179,7 @@ func main() {
 	assert(err)
 	assert(ioutil.WriteFile(cryptmountsPath, buf, 0600))
 
-	// Hand over execution to initramfs environment
+	// Hand over execution to program in initramfs environment
 
 	// Clean up
 	assert(os.Remove(cryptmountsPath))
