@@ -127,10 +127,16 @@ func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice,
 				continue
 			}
 
+			var err error
+
 			if enable {
-				cryptdevices[i].EnableWriteBarrier()
+				err = cryptdevices[i].EnableWriteBarrier()
 			} else {
-				cryptdevices[i].DisableWriteBarrier()
+				err = cryptdevices[i].DisableWriteBarrier()
+			}
+
+			if err != nil {
+				return err
 			}
 		}
 	}
