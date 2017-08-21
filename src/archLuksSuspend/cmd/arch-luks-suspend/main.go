@@ -16,7 +16,7 @@ const systemSleepPath = "/usr/lib/systemd/system-sleep"
 
 var debugmode = false
 var bindPaths = []string{"/sys", "/proc", "/dev", "/run"}
-var services = []string{
+var systemdServices = []string{
 	// journald may attempt to write to the suspended device
 	"systemd-journald-dev-log.socket",
 	"systemd-journald.socket",
@@ -112,7 +112,7 @@ func unbindInitramfs() error {
 }
 
 func systemctlServices(command string) error {
-	return exec.Command("/usr/bin/systemctl", append([]string{command}, services...)...).Run()
+	return exec.Command("/usr/bin/systemctl", append([]string{command}, systemdServices...)...).Run()
 }
 
 const disableBarrier = false
