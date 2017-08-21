@@ -1,9 +1,11 @@
 package archLuksSuspend
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 var DebugMode = false
@@ -20,8 +22,26 @@ func Poweroff() {
 }
 
 // SuspendToRAM attempts to suspend the system via /sys/power/state
-func SuspendToRAM() {
-	if err := ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600); err != nil {
-		Poweroff()
+func SuspendToRAM() error {
+	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
+}
+
+// Dump writes the names of a slice of CryptDevices as a NUL delimited
+// sequence of bytes
+func Dump(path string, cryptdevices []CryptDevice) error {
+	buf := make([][]byte, len(cryptdevices))
+	for i := range cryptdevices {
+		buf[i] = []byte(cryptdevices[i].Name)
 	}
+	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
+}
+
+// Load loads the names written to a path by Dump
+func Load(path string) ([]string, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(string(buf), "\x00"), nil
 }

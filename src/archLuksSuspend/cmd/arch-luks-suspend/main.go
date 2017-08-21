@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -181,9 +179,7 @@ func main() {
 	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
 	// Dump devices to be suspended
-	buf, err := json.Marshal(archLuksSuspend.CryptMounts(cryptdevices))
-	assert(err)
-	assert(ioutil.WriteFile(cryptmountsPath, buf, 0600))
+	assert(archLuksSuspend.Dump(cryptmountsPath, cryptdevices))
 
 	// Hand over execution to program in initramfs environment
 	assert(chrootAndRun(initramfsDir, "/suspend", filepath.Join("run", filepath.Base(cryptmountsPath))))
