@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +14,7 @@ import (
 )
 
 const initramfsPath = "/run/initramfs"
+const cryptmountsPath = "/run/initramfs/run/cryptmounts.json"
 const systemSleepPath = "/usr/lib/systemd/system-sleep"
 
 var debugmode = false
@@ -171,7 +174,15 @@ func main() {
 	// Disable write barriers on filesystems to avoid IO hangs
 	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
-	// Chroot and hand over execution to initramfs environment
+	// Dump devices to be suspended
+	buf, err := json.Marshal(archLuksSuspend.CryptMounts(cryptdevices))
+	assert(err)
+	assert(ioutil.WriteFile(cryptmountsPath, buf, 0600))
+
+	// Hand over execution to initramfs environment
+
+	// Clean up
+	assert(os.Remove(cryptmountsPath))
 
 	// The user has unlocked the root device, so now resume all other devices with known keyfiles
 
