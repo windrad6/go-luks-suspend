@@ -17,7 +17,6 @@ const initramfsDir = "/run/initramfs"
 const cryptmountsPath = "/run/initramfs/run/cryptmounts.json"
 const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
-var debugmode = false
 var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
 var systemdServices = []string{
 	// journald may attempt to write to the suspended device
@@ -29,7 +28,7 @@ var systemdServices = []string{
 func assert(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		archLuksSuspend.Poweroff(debugmode)
+		archLuksSuspend.Poweroff()
 	}
 }
 
@@ -157,7 +156,7 @@ func chrootAndRun(newroot string, cmdline ...string) error {
 func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
-	debugmode = *debug
+	archLuksSuspend.DebugMode = *debug
 
 	// Ensure initramfs program exists
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))

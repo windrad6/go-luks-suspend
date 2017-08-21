@@ -6,9 +6,11 @@ import (
 	"os"
 )
 
+var DebugMode = false
+
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
-func Poweroff(debugmode bool) {
-	if debugmode {
+func Poweroff() {
+	if DebugMode {
 		fmt.Fprintln(os.Stderr, "POWEROFF")
 		os.Exit(1)
 	}
@@ -18,8 +20,8 @@ func Poweroff(debugmode bool) {
 }
 
 // SuspendToRAM attempts to suspend the system via /sys/power/state
-func SuspendToRAM(debugmode bool) {
+func SuspendToRAM() {
 	if err := ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600); err != nil {
-		Poweroff(debugmode)
+		Poweroff()
 	}
 }
