@@ -35,8 +35,6 @@ type CryptDevice struct {
 	DMDir        string // /sys/block/dm-%d/dm
 	DMDevice     string // /dev/mapper/%s
 	Mountpoint   string
-	FSType       string
-	MountOpts    string
 	Keyfile      string
 	NeedsRemount bool
 }
@@ -163,9 +161,7 @@ func addMountInfo(cdmap map[string]*CryptDevice, mountsPath string) error {
 
 		if cd, ok := cdmap[fields[0]]; ok {
 			cd.Mountpoint = fields[1]
-			cd.FSType = fields[2]
-			cd.MountOpts = fields[3]
-			cd.NeedsRemount = needsRemount(cd.FSType, cd.MountOpts)
+			cd.NeedsRemount = needsRemount(fields[2], fields[3])
 		}
 	}
 
