@@ -164,15 +164,15 @@ func addMountInfo(cdmap map[string]*CryptDevice, mountsPath string) error {
 }
 
 func needsRemount(fstype, mountopts string) bool {
-	if fstype != "ext4" {
-		return false
-	}
-
-	for _, opt := range strings.Split(mountopts, ",") {
-		if opt == "barrier=0" || opt == "nobarrier" {
-			return false
+	switch fstype {
+	// ReiserFS supports write barriers, but the option syntax appears to
+	// be unconventional. Since it's fading into obscurity, just ignore it.
+	case "ext3", "ext4", "btrfs":
+		for _, o := range strings.Split(mountopts, ",") {
+			if o == "barrier=1" || o == "barrier" {
+				return true
+			}
 		}
 	}
-
-	return true
+	return false
 }
