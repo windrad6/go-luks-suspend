@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 )
 
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
@@ -71,6 +72,10 @@ func (cd *CryptDevice) IsSuspended() (bool, error) {
 	}
 
 	return buf[0] == '1', nil
+}
+
+func (cd *CryptDevice) Remount(mountdata string) error {
+	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, mountdata)
 }
 
 func cryptDevicesFromSysfs() ([]CryptDevice, error) {
@@ -169,10 +174,13 @@ func needsRemount(fstype, mountopts string) bool {
 	// be unconventional. Since it's fading into obscurity, just ignore it.
 	case "ext3", "ext4", "btrfs":
 		for _, o := range strings.Split(mountopts, ",") {
-			if o == "barrier=1" || o == "barrier" {
-				return true
+			// Write barriers are on by default and do not show up
+			// in the list of mount options, so check for the negative
+			if o == "barrier=0" || o == "nobarrier" {
+				return false
 			}
 		}
+		return true
 	}
 	return false
 }
