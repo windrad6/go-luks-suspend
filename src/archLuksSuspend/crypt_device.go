@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -51,6 +52,22 @@ func (cd *CryptDevice) IsSuspended() (bool, error) {
 	}
 
 	return buf[0] == '1', nil
+}
+
+// LuksResume resumes this CryptDevice. Does nothing and returns nil if this
+// CryptDevice is not suspended or lacks a keyfile.
+func (cd *CryptDevice) LuksResume() error {
+	if len(cd.Keyfile) == 0 {
+		return nil
+	}
+
+	if suspended, err := cd.IsSuspended(); err != nil {
+		return err
+	} else if !suspended {
+		return nil
+	}
+
+	return exec.Command("/usr/bin/cryptsetup", "--key-file", cd.Keyfile, "luksResume", cd.Name).Run()
 }
 
 func (cd *CryptDevice) DisableWriteBarrier() error {

@@ -6,13 +6,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"sync"
 	"syscall"
 
 	"archLuksSuspend"
 )
 
 const initramfsDir = "/run/initramfs"
-const cryptmountsPath = "/run/initramfs/run/cryptmounts.json"
+const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
 const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
 var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
@@ -78,7 +80,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 
 	for i := range fs {
 		if err := checkRootOwnedAndExecutable(fs[i]); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			continue
 		}
 
@@ -151,12 +153,42 @@ func chrootAndRun(newroot string, cmdline ...string) error {
 	return exec.Command("/usr/bin/chroot", args...).Run()
 }
 
+func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []archLuksSuspend.CryptDevice) {
+	n := runtime.NumCPU()
+	wg := sync.WaitGroup{}
+	ch := make(chan *archLuksSuspend.CryptDevice)
+
+	wg.Add(1)
+	go func() {
+		for i := range cryptdevices {
+			if len(cryptdevices[i].Keyfile) > 0 {
+				ch <- &cryptdevices[i]
+			}
+		}
+		close(ch)
+		wg.Done()
+	}()
+
+	wg.Add(n)
+	for i := 0; i < n; i++ {
+		go func() {
+			for cd := range ch {
+				fmt.Fprintln(os.Stderr, "Resuming "+cd.Name)
+				assert(cd.LuksResume())
+			}
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+}
+
 func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
 	archLuksSuspend.DebugMode = *debug
 
-	// Ensure initramfs program exists
+	// Ensure suspend program exists in initramfs
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
 	cryptdevices, err := archLuksSuspend.GetCryptDevices()
@@ -179,20 +211,21 @@ func main() {
 	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
 	// Dump devices to be suspended
-	assert(archLuksSuspend.Dump(cryptmountsPath, cryptdevices))
+	assert(archLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
 
 	// Hand over execution to program in initramfs environment
 	args := []string{"/suspend"}
 	if archLuksSuspend.DebugMode {
 		args = append(args, "-debug")
 	}
-	args = append(args, filepath.Join("run", filepath.Base(cryptmountsPath)))
+	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
 	assert(chrootAndRun(initramfsDir, args...))
 
 	// Clean up
-	assert(os.Remove(cryptmountsPath))
+	assert(os.Remove(cryptdevicesPath))
 
-	// The user has unlocked the root device, so now resume all other devices with known keyfiles
+	// The user has unlocked the root device, so resume all other devices with keyfiles
+	resumeDevicesWithKeyfilesOrPoweroff(cryptdevices)
 
 	// Re-enable write barriers on filesystems that had them
 	assert(remountDevicesWithWriteBarriers(cryptdevices, enableBarrier))
