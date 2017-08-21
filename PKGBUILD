@@ -1,7 +1,7 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
 pkgname=arch-luks-suspend-nerv
-pkgver=
+pkgver=0
 pkgrel=1
 pkgdesc='Custom arch-luks-suspend build'
 arch=('any')
