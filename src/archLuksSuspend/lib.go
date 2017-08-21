@@ -2,6 +2,7 @@ package archLuksSuspend
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,11 +28,24 @@ func SuspendToRAM() error {
 }
 
 // Dump writes the names of a slice of CryptDevices as a NUL delimited
-// sequence of bytes
+// sequence of bytes, starting with the name of the CryptDevice mounted on /.
+// An error is returned if no CryptDevice is found that is mounted on /.
 func Dump(path string, cryptdevices []CryptDevice) error {
 	buf := make([][]byte, len(cryptdevices))
+	j := 1
 	for i := range cryptdevices {
-		buf[i] = []byte(cryptdevices[i].Name)
+		if cryptdevices[i].Mountpoint == "/" {
+			if len(buf[0]) > 0 {
+				// Is this really an error?
+				return errors.New("multiple root cryptdevices")
+			}
+			buf[0] = []byte(cryptdevices[i].Name)
+		} else if j >= len(buf) {
+			return errors.New("no root cryptdevice")
+		} else {
+			buf[j] = []byte(cryptdevices[i].Name)
+			j++
+		}
 	}
 	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
 }
