@@ -31,7 +31,8 @@ func SuspendToRAM(debugmode bool) {
 
 type CryptDevice struct {
 	Name         string
-	DMPath       string // /sys/block/dm-1/dm
+	DMDir        string // /sys/block/dm-%d/dm
+	DMDevice     string // /dev/mapper/%s
 	Mountpoint   string
 	FSType       string
 	MountOpts    string
@@ -49,7 +50,7 @@ func GetCryptDevices() ([]CryptDevice, error) {
 	cdmap := make(map[string]*CryptDevice, 2*len(cryptdevices))
 	for i := range cryptdevices {
 		cdmap[cryptdevices[i].Name] = &cryptdevices[i]
-		cdmap["/dev/mapper/"+cryptdevices[i].Name] = &cryptdevices[i] // to match entry in /proc/mounts
+		cdmap[cryptdevices[i].DMDevice] = &cryptdevices[i] // to match entry in /proc/mounts
 	}
 
 	if err := addKeyfilesFromCrypttab(cdmap, "/etc/crypttab"); err != nil {
@@ -64,7 +65,7 @@ func GetCryptDevices() ([]CryptDevice, error) {
 }
 
 func (cd *CryptDevice) IsSuspended() (bool, error) {
-	buf, err := ioutil.ReadFile(filepath.Join(cd.DMPath, "suspended"))
+	buf, err := ioutil.ReadFile(filepath.Join(cd.DMDir, "suspended"))
 	if err != nil {
 		return false, err
 	}
@@ -91,7 +92,7 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 			continue
 		}
 
-		cd := CryptDevice{DMPath: dirs[i]}
+		cd := CryptDevice{DMDir: dirs[i]}
 
 		// Skip if suspended
 		susp, err := cd.IsSuspended()
@@ -101,12 +102,13 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 			continue
 		}
 
-		name, err := ioutil.ReadFile(filepath.Join(cd.DMPath, "name"))
+		name, err := ioutil.ReadFile(filepath.Join(cd.DMDir, "name"))
 		if err != nil {
 			return nil, err
 		}
 
 		cd.Name = string(bytes.TrimSpace(name))
+		cd.DMDevice = "/dev/mapper/" + cd.Name
 		cryptdevices = append(cryptdevices, cd)
 	}
 
