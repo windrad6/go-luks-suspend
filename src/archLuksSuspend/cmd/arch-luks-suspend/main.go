@@ -182,7 +182,12 @@ func main() {
 	assert(archLuksSuspend.Dump(cryptmountsPath, cryptdevices))
 
 	// Hand over execution to program in initramfs environment
-	assert(chrootAndRun(initramfsDir, "/suspend", filepath.Join("run", filepath.Base(cryptmountsPath))))
+	args := []string{"/suspend"}
+	if archLuksSuspend.DebugMode {
+		args = append(args, "-debug")
+	}
+	args = append(args, filepath.Join("run", filepath.Base(cryptmountsPath)))
+	assert(chrootAndRun(initramfsDir, args...))
 
 	// Clean up
 	assert(os.Remove(cryptmountsPath))
