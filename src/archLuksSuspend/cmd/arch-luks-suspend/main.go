@@ -11,13 +11,17 @@ import (
 	"archLuksSuspend"
 )
 
-const (
-	systemSleepPath = "/usr/lib/systemd/system-sleep"
-	initramfsPath   = "/run/initramfs"
-)
+const initramfsPath = "/run/initramfs"
+const systemSleepPath = "/usr/lib/systemd/system-sleep"
 
-var BindPaths = []string{"/sys", "/proc", "/dev", "/run"}
 var debugmode = false
+var bindPaths = []string{"/sys", "/proc", "/dev", "/run"}
+var services = []string{
+	// journald may attempt to write to the suspended device
+	"systemd-journald-dev-log.socket",
+	"systemd-journald.socket",
+	"systemd-journald.service",
+}
 
 func assert(err error) {
 	if err != nil {
@@ -87,6 +91,30 @@ func runSystemSuspendScripts(scriptarg string) error {
 	return nil
 }
 
+func bindInitramfs() error {
+	for _, dir := range bindPaths {
+		err := syscall.Mount(dir, filepath.Join(initramfsPath, dir), "", syscall.MS_BIND, "")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func unbindInitramfs() error {
+	for _, dir := range bindPaths {
+		err := syscall.Unmount(filepath.Join(initramfsPath, dir), 0)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func systemctlServices(command string) error {
+	return exec.Command("/usr/bin/systemctl", append([]string{command}, services...)...).Run()
+}
+
 func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
@@ -94,4 +122,34 @@ func main() {
 
 	// Ensure initramfs program exists
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsPath, "suspend")))
+
+	cryptdevices, err := archLuksSuspend.GetCryptDevices()
+	assert(err)
+
+	// Prepare chroot
+	defer func() { assert(unbindInitramfs()) }()
+	assert(bindInitramfs())
+
+	// Run pre-suspend scripts
+	assert(runSystemSuspendScripts("pre"))
+
+	// Stop services that may block suspend
+	assert(systemctlServices("stop"))
+
+	// Flush writes before luksSuspend
+	syscall.Sync()
+
+	// Disable write barriers on filesystems to avoid IO hangs
+
+	// Chroot and hand over execution to initramfs environment
+
+	// The user has unlocked the root device, so now resume all other devices with known keyfiles
+
+	// Restore original mount options where necessary
+
+	// Restart stopped services
+	assert(systemctlServices("start"))
+
+	// Run post-suspend scripts
+	assert(runSystemSuspendScripts("post"))
 }
