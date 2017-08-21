@@ -115,12 +115,10 @@ func systemctlServices(command string) error {
 	return exec.Command("/usr/bin/systemctl", append([]string{command}, services...)...).Run()
 }
 
-func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice, barrier bool) error {
-	opt := "nobarrier"
-	if barrier {
-		opt = "barrier"
-	}
+const disableBarrier = false
+const enableBarrier = true
 
+func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice, enable bool) error {
 	for i := range cryptdevices {
 		if cryptdevices[i].NeedsRemount {
 			if suspended, err := cryptdevices[i].IsSuspended(); err != nil {
@@ -129,7 +127,11 @@ func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice,
 				continue
 			}
 
-			cryptdevices[i].Remount(opt)
+			if enable {
+				cryptdevices[i].EnableWriteBarrier()
+			} else {
+				cryptdevices[i].DisableWriteBarrier()
+			}
 		}
 	}
 
@@ -161,14 +163,14 @@ func main() {
 	syscall.Sync()
 
 	// Disable write barriers on filesystems to avoid IO hangs
-	assert(remountDevicesWithWriteBarriers(cryptdevices, false))
+	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
 	// Chroot and hand over execution to initramfs environment
 
 	// The user has unlocked the root device, so now resume all other devices with known keyfiles
 
 	// Re-enable write barriers on filesystems that had them
-	assert(remountDevicesWithWriteBarriers(cryptdevices, true))
+	assert(remountDevicesWithWriteBarriers(cryptdevices, enableBarrier))
 
 	// Restart stopped services
 	assert(systemctlServices("start"))

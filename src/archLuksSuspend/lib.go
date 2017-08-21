@@ -74,8 +74,12 @@ func (cd *CryptDevice) IsSuspended() (bool, error) {
 	return buf[0] == '1', nil
 }
 
-func (cd *CryptDevice) Remount(mountdata string) error {
-	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, mountdata)
+func (cd *CryptDevice) DisableWriteBarrier() error {
+	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
+}
+
+func (cd *CryptDevice) EnableWriteBarrier() error {
+	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
 func cryptDevicesFromSysfs() ([]CryptDevice, error) {
