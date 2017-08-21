@@ -147,6 +147,13 @@ func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice,
 	return nil
 }
 
+func chrootAndRun(newroot string, cmdline ...string) error {
+	args := make([]string, 0, len(cmdline)+1)
+	args = append(args, newroot)
+	args = append(args, cmdline...)
+	return exec.Command("/usr/bin/chroot", args...).Run()
+}
+
 func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
@@ -180,6 +187,7 @@ func main() {
 	assert(ioutil.WriteFile(cryptmountsPath, buf, 0600))
 
 	// Hand over execution to program in initramfs environment
+	assert(chrootAndRun(initramfsDir, "/suspend", filepath.Join("run", filepath.Base(cryptmountsPath))))
 
 	// Clean up
 	assert(os.Remove(cryptmountsPath))
