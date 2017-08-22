@@ -29,13 +29,16 @@ suspend and wake.
 
 
 Installation
--------------
+------------
 
-1. Install this AUR package: https://aur.archlinux.org/packages/go-luks-suspend/
+1. Install this AUR package: https://aur.archlinux.org/packages/go-luks-suspend/<br>
    Alternatively, run `make install` as root.
-2. Edit `/etc/mkinitcpio.conf` and make sure the following hooks are enabled:
+
+2. Edit `/etc/mkinitcpio.conf` and make sure the following hooks are enabled:<br>
    `udev`, `encrypt`, `shutdown`, `suspend`.
+
 3. Rebuild the initramfs: `mkinitcpio -p linux`.
+
 4. Reboot.
 
 
@@ -60,8 +63,10 @@ concurrently on wake after the user successfully unlocks the root volume with
 a passphrase.
 
 
-Author and license
-------------------
+Authors and license
+-------------------
+
+Copyright 2017 Sung Pae <self@sungpae.com> (Go implementation)
 
 Copyright 2013 Vianney le Clément de Saint-Marcq <vleclement@gmail.com>
 
@@ -76,7 +81,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with This program.  If not, see <http://www.gnu.org/licenses/>.
-
-Go implementation added by:
-
-Copyright 2017 Sung Pae <self@sungpae.com>
