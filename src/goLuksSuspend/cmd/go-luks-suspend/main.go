@@ -155,9 +155,9 @@ func remountDevicesWithWriteBarriers(cryptdevices []goLuksSuspend.CryptDevice, e
 	return nil
 }
 
-func chrootAndRun(newroot string, cmdline ...string) error {
+func runInInitramfsChroot(cmdline []string) error {
 	chroot := make([]string, 0, len(cmdline)+2)
-	chroot = append(chroot, "/usr/bin/chroot", newroot)
+	chroot = append(chroot, "/usr/bin/chroot", initramfsDir)
 	chroot = append(chroot, cmdline...)
 	return goLuksSuspend.Run([]string{}, chroot, true)
 }
@@ -247,7 +247,7 @@ func main() {
 		args = append(args, "-debug")
 	}
 	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
-	assert(chrootAndRun(initramfsDir, args...))
+	assert(runInInitramfsChroot(args))
 
 	l("removing cryptdevice dump file")
 	assert(os.Remove(cryptdevicesPath))
