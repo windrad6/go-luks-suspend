@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -207,6 +208,9 @@ func main() {
 	l("gathering cryptdevices")
 	cryptdevices, err := goLuksSuspend.GetCryptDevices()
 	assert(err)
+	if goLuksSuspend.DebugMode {
+		fmt.Println(cryptdevices)
+	}
 
 	defer func() {
 		l("unmounting initramfs bind mounts")
@@ -229,6 +233,10 @@ func main() {
 
 	l("dumping list of cryptdevice names to initramfs")
 	assert(goLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
+	if goLuksSuspend.DebugMode {
+		buf, _ := ioutil.ReadFile(cryptdevicesPath) // errcheck: debugmode only
+		fmt.Printf("%s: %#v\n", cryptdevicesPath, string(buf))
+	}
 
 	l("calling suspend in initramfs chroot")
 	args := []string{"/suspend"}
