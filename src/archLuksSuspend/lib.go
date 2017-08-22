@@ -5,11 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 )
 
 var DebugMode = false
+
+func Log(msg string) {
+	if DebugMode {
+		log.Println(msg)
+	}
+}
 
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
 func Poweroff() {

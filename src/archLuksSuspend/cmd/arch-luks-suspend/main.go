@@ -191,33 +191,38 @@ func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
 	archLuksSuspend.DebugMode = *debug
+	l := archLuksSuspend.Log
 
-	// Ensure suspend program exists in initramfs
+	l("checking for suspend program in initramfs")
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
+	l("gathering cryptdevices")
 	cryptdevices, err := archLuksSuspend.GetCryptDevices()
 	assert(err)
 
-	// Prepare chroot
-	defer func() { assert(unbindInitramfs()) }()
+	defer func() {
+		l("unmounting initramfs bind mounts")
+		assert(unbindInitramfs())
+	}()
+	l("preparing initramfs chroot")
 	assert(bindInitramfs())
 
-	// Run pre-suspend scripts
+	l("running pre-suspend scripts")
 	assert(runSystemSuspendScripts("pre"))
 
-	// Stop services that may block suspend
+	l("stopping selected systemd services")
 	assert(systemctlServices("stop"))
 
-	// Flush writes before luksSuspend
+	l("flushing pending writes")
 	syscall.Sync()
 
-	// Disable write barriers on filesystems to avoid IO hangs
+	l("disabling write barriers on filesystems to avoid IO hangs")
 	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
-	// Dump devices to be suspended
+	l("dumping list of cryptdevice names to initramfs")
 	assert(archLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
 
-	// Hand over execution to program in initramfs environment
+	l("calling suspend in initramfs chroot")
 	args := []string{"/suspend"}
 	if archLuksSuspend.DebugMode {
 		args = append(args, "-debug")
@@ -225,18 +230,18 @@ func main() {
 	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
 	assert(chrootAndRun(initramfsDir, args...))
 
-	// Clean up
+	l("removing cryptdevice dump file")
 	assert(os.Remove(cryptdevicesPath))
 
-	// The user has unlocked the root device, so resume all other devices with keyfiles
+	l("resuming cryptdevices with keyfiles")
 	resumeDevicesWithKeyfilesOrPoweroff(cryptdevices)
 
-	// Re-enable write barriers on filesystems that had them
+	l("re-enabling write barriers on filesystems")
 	assert(remountDevicesWithWriteBarriers(cryptdevices, enableBarrier))
 
-	// Restart stopped services
+	l("starting previously stopped systemd services")
 	assert(systemctlServices("start"))
 
-	// Run post-suspend scripts
+	l("running post-suspend scripts")
 	assert(runSystemSuspendScripts("post"))
 }

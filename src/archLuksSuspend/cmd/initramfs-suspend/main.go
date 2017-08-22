@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archLuksSuspend"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"os/exec"
 	"runtime"
 	"sync"
+
+	"archLuksSuspend"
 )
 
 func assert(err error) {
@@ -36,7 +37,7 @@ func suspendCryptDevicesOrPoweroff(deviceNames []string) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for name := range ch {
-				fmt.Fprintln(os.Stderr, "Suspending "+name)
+				archLuksSuspend.Log("suspending " + name)
 				assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", name).Run())
 			}
 			wg.Done()
@@ -58,18 +59,22 @@ func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
 	archLuksSuspend.DebugMode = *debug
+	l := archLuksSuspend.Log
 
 	if flag.NArg() != 1 {
 		assert(errors.New("cryptmounts path unspecified"))
 	}
 
+	l("loading cryptdevice names")
 	deviceNames, err := archLuksSuspend.Load(flag.Arg(0))
 	assert(err)
 
+	l("suspending cryptdevices")
 	suspendCryptDevicesOrPoweroff(deviceNames)
 
+	l("suspending system to RAM")
 	assert(archLuksSuspend.SuspendToRAM())
 
-	// Resume root device
+	l("resuming root cryptdevice")
 	assert(luksResume(deviceNames[0]))
 }
