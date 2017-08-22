@@ -74,8 +74,12 @@ func main() {
 	l("suspending cryptdevices")
 	suspendCryptDevicesOrPoweroff(deviceNames)
 
-	l("suspending system to RAM")
-	assert(goLuksSuspend.SuspendToRAM())
+	if goLuksSuspend.DebugMode {
+		l("debug: skipping suspend to RAM")
+	} else {
+		l("suspending system to RAM")
+		assert(goLuksSuspend.SuspendToRAM())
+	}
 
 	l("resuming root cryptdevice")
 	assert(luksResume(deviceNames[0]))

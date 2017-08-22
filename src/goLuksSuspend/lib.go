@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 var DebugMode = false
@@ -21,8 +22,20 @@ func Log(msg string) {
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
 func Poweroff() {
 	if DebugMode {
-		log.Println("spawning /bin/sh instead of poweroff")
-		_ = Run([]string{"PS1=\\w\\$"}, []string{"/bin/sh"}, true) // errcheck: debugmode only
+		log.Println("==========================================================")
+		log.Println("  DEBUG SHELL: spawning /bin/sh instead of powering off!  ")
+		log.Println("   `exit 42` if go-luks-suspend should resume execution   ")
+		log.Println("==========================================================")
+		err := Run([]string{"PS1=[\\w \\u\\$] "}, []string{"/bin/sh"}, true) // errcheck: debugmode only
+		if err != nil {
+			if exiterr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+					if status.ExitStatus() == 42 {
+						return
+					}
+				}
+			}
+		}
 		os.Exit(1)
 	}
 	for {
