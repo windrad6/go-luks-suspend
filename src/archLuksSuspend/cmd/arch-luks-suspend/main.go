@@ -150,7 +150,11 @@ func chrootAndRun(newroot string, cmdline ...string) error {
 	args := make([]string, 0, len(cmdline)+1)
 	args = append(args, newroot)
 	args = append(args, cmdline...)
-	return exec.Command("/usr/bin/chroot", args...).Run()
+	cmd := exec.Command("/usr/bin/chroot", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []archLuksSuspend.CryptDevice) {
