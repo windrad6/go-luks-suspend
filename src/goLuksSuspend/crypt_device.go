@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -71,7 +70,11 @@ func (cd *CryptDevice) CanResumeWithKeyfile() (bool, error) {
 
 // LuksResumeWithKeyfile resumes this CryptDevice with its keyfile
 func (cd *CryptDevice) LuksResumeWithKeyfile() error {
-	return exec.Command("/usr/bin/cryptsetup", "--key-file", cd.Keyfile, "luksResume", cd.Name).Run()
+	return Run(
+		nil,
+		[]string{"/usr/bin/cryptsetup", "--key-file", cd.Keyfile, "luksResume", cd.Name},
+		false,
+	)
 }
 
 func (cd *CryptDevice) DisableWriteBarrier() error {

@@ -4,8 +4,6 @@ import (
 	"errors"
 	"flag"
 	"log"
-	"os"
-	"os/exec"
 	"runtime"
 	"sync"
 
@@ -38,7 +36,11 @@ func suspendCryptDevicesOrPoweroff(deviceNames []string) {
 		go func() {
 			for name := range ch {
 				goLuksSuspend.Log("suspending " + name)
-				assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", name).Run())
+				assert(goLuksSuspend.Run(
+					nil,
+					[]string{"/usr/bin/cryptsetup", "luksSuspend", name},
+					false,
+				))
 			}
 			wg.Done()
 		}()
@@ -48,11 +50,11 @@ func suspendCryptDevicesOrPoweroff(deviceNames []string) {
 }
 
 func luksResume(device string) error {
-	cmd := exec.Command("/usr/bin/cryptsetup", "luksResume", device)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return goLuksSuspend.Run(
+		nil,
+		[]string{"/usr/bin/cryptsetup", "luksResume", device},
+		true,
+	)
 }
 
 func main() {

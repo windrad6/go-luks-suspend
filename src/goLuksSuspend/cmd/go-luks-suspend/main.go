@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -86,7 +85,11 @@ func runSystemSuspendScripts(scriptarg string) error {
 			continue
 		}
 
-		err := exec.Command(filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend").Run()
+		err := goLuksSuspend.Run(
+			nil,
+			[]string{filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend"},
+			false,
+		)
 		if err != nil {
 			return err
 		}
@@ -116,7 +119,11 @@ func unbindInitramfs() error {
 }
 
 func systemctlServices(command string) error {
-	return exec.Command("/usr/bin/systemctl", append([]string{command}, systemdServices...)...).Run()
+	return goLuksSuspend.Run(
+		nil,
+		append([]string{"/usr/bin/systemctl", command}, systemdServices...),
+		false,
+	)
 }
 
 const disableBarrier = false
@@ -149,14 +156,10 @@ func remountDevicesWithWriteBarriers(cryptdevices []goLuksSuspend.CryptDevice, e
 }
 
 func chrootAndRun(newroot string, cmdline ...string) error {
-	args := make([]string, 0, len(cmdline)+1)
-	args = append(args, newroot)
-	args = append(args, cmdline...)
-	cmd := exec.Command("/usr/bin/chroot", args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	chroot := make([]string, 0, len(cmdline)+2)
+	chroot = append(chroot, "/usr/bin/chroot", newroot)
+	chroot = append(chroot, cmdline...)
+	return goLuksSuspend.Run([]string{}, chroot, true)
 }
 
 func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []goLuksSuspend.CryptDevice) {
@@ -197,7 +200,7 @@ func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []goLuksSuspend.CryptDevic
 }
 
 func main() {
-	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
+	debug := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
 	flag.Parse()
 	goLuksSuspend.DebugMode = *debug
 	l := goLuksSuspend.Log

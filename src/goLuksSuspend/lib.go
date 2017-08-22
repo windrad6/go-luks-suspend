@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -20,7 +21,8 @@ func Log(msg string) {
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
 func Poweroff() {
 	if DebugMode {
-		log.Println("POWEROFF")
+		log.Println("spawning /bin/sh instead of poweroff")
+		_ = Run([]string{"PS1=\\w\\$"}, []string{"/bin/sh"}, true) // errcheck: debugmode only
 		os.Exit(1)
 	}
 	for {
@@ -63,4 +65,15 @@ func Load(path string) ([]string, error) {
 	}
 
 	return strings.Split(string(buf), "\x00"), nil
+}
+
+func Run(env []string, cmdline []string, stdio bool) error {
+	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	cmd.Env = env
+	if stdio {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	return cmd.Run()
 }
