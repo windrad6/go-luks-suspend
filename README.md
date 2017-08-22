@@ -1,28 +1,37 @@
-arch-luks-suspend
-==================
+go-luks-suspend
+===============
 
-A script for [Arch Linux][] to lock the encrypted root volume on suspend.
+A package for [Arch Linux][] to lock LUKS encrypted volumes on suspend.
 
 When using [dm-crypt with LUKS][] to set up full system encryption, the
 encryption key is kept in memory when suspending the system. This drawback
-defeats the purpose of encryption if you carry around your suspended laptop
-a lot. One can use the `cryptsetup luksSuspend` command to freeze all I/O and
-flush the key from memory, but special care must be taken when applying it to
-the root device.
+defeats the purpose of encryption if you are ever physically separated from
+your machine. One can use the `cryptsetup luksSuspend` command to freeze all
+I/O and flush the key from memory, but special care must be taken when
+applying it to the root device.
 
-The `arch-linux-suspend` script replaces the default suspend mechanism of
+The `go-luks-suspend` program replaces the default suspend mechanism of
 systemd. It changes root to initramfs in order to perform the `luksSuspend`,
-actual suspend, and `luksResume` operations. It relies on the `shutdown`
+suspend to RAM, and `luksResume` operations. It relies on the `shutdown`
 initcpio hook to provide access to the initramfs.
+
+This project is a rewrite of Vianney le Clément's excellent
+[arch-luks-suspend][] in the Go programming language. Rewriting in Go provides
+access to safe multithreading as well as better maintainability.
+
+As a case in point, while `arch-luks-suspend` only locks the root device,
+`go-luks-suspend` concurrently locks and unlocks all active LUKS volumes on
+suspend and wake.
 
 [Arch Linux]: https://www.archlinux.org/
 [dm-crypt with LUKS]: https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS
+[arch-luks-suspend]: https://github.com/vianney/arch-luks-suspend
 
 
 Installation
 -------------
 
-1. Install this AUR package: https://aur.archlinux.org/packages/arch-luks-suspend-git/  
+1. Install this AUR package: https://aur.archlinux.org/packages/go-luks-suspend/
    Alternatively, run `make install` as root.
 2. Edit `/etc/mkinitcpio.conf` and make sure the following hooks are enabled:
    `udev`, `encrypt`, `shutdown`, `suspend`.
@@ -30,8 +39,29 @@ Installation
 4. Reboot.
 
 
+Unlocking non-root LUKS volumes on wake
+---------------------------------------
+
+`go-luks-suspend` locks all active LUKS volumes on the system, but will only
+unlock non-root LUKS volumes that have an entry in `/etc/crypttab` with a
+corresponding keyfile:
+
+```ini
+# /etc/crypttab
+#
+#<name>   <device>                                   <keyfile>           <options>
+crypt-01  UUID=51932da0-6da1-4e92-9c2e-fc0063b2fcdb  /root/crypt-01.key  luks
+crypt-02  UUID=4bf96ca0-8d10-47e9-bf57-aea2c72a472d  /root/crypt-02.key  luks
+crypt-03  UUID=7a790264-34a3-40d7-837f-b76271710e2a  /root/crypt-03.key  luks
+```
+
+In the example above, `crypt-01`, `crypt-02`, and `crypt-03` will be unlocked
+concurrently on wake after the user successfully unlocks the root volume with
+a passphrase.
+
+
 Author and license
--------------------
+------------------
 
 Copyright 2013 Vianney le Clément de Saint-Marcq <vleclement@gmail.com>
 
@@ -46,3 +76,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with This program.  If not, see <http://www.gnu.org/licenses/>.
+
+Go implementation added by:
+
+Copyright 2017 Sung Pae <self@sungpae.com>

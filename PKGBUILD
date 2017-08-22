@@ -1,27 +1,18 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
-pkgname=arch-luks-suspend-nerv
-pkgver=0
+pkgname=go-luks-suspend
+pkgver=1.0.0
 pkgrel=1
-pkgdesc='Custom arch-luks-suspend build'
-arch=('any')
-url="https://github.com/guns/arch-luks-suspend"
+pkgdesc='Encrypt LUKS volumes on system suspend'
+arch=('x86_64')
+url="https://github.com/guns/go-luks-suspend"
 license=('GPL3')
-groups=('nerv')
 depends=('systemd' 'cryptsetup' 'mkinitcpio')
 makedepends=('git')
 backup=('etc/systemd/system/systemd-suspend.service')
 install=install
-provides=('arch-luks-suspend' 'arch-luks-suspend-git')
 conflicts=('arch-luks-suspend' 'arch-luks-suspend-git')
-replaces=('arch-luks-suspend-git')
-
-pkgver() {
-  cd "$startdir"
-  _date=$(git show -s --format='%ci' | cut -d' ' -f1 | sed 's/-//g')
-  _hash=$(git show -s --format='%h')
-  echo "$_date.g$_hash"
-}
+replaces=('arch-luks-suspend' 'arch-luks-suspend-git')
 
 package() {
   cd "$startdir"

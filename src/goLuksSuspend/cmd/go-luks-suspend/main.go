@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +11,7 @@ import (
 	"sync"
 	"syscall"
 
-	"archLuksSuspend"
+	"goLuksSuspend"
 )
 
 const initramfsDir = "/run/initramfs"
@@ -27,8 +28,8 @@ var systemdServices = []string{
 
 func assert(err error) {
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		archLuksSuspend.Poweroff()
+		log.Println(err)
+		goLuksSuspend.Poweroff()
 	}
 }
 
@@ -80,7 +81,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 
 	for i := range fs {
 		if err := checkRootOwnedAndExecutable(fs[i]); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			log.Println(err)
 			continue
 		}
 
@@ -120,7 +121,7 @@ func systemctlServices(command string) error {
 const disableBarrier = false
 const enableBarrier = true
 
-func remountDevicesWithWriteBarriers(cryptdevices []archLuksSuspend.CryptDevice, enable bool) error {
+func remountDevicesWithWriteBarriers(cryptdevices []goLuksSuspend.CryptDevice, enable bool) error {
 	for i := range cryptdevices {
 		if cryptdevices[i].NeedsRemount {
 			if suspended, err := cryptdevices[i].IsSuspended(); err != nil {
@@ -157,10 +158,10 @@ func chrootAndRun(newroot string, cmdline ...string) error {
 	return cmd.Run()
 }
 
-func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []archLuksSuspend.CryptDevice) {
+func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []goLuksSuspend.CryptDevice) {
 	n := runtime.NumCPU()
 	wg := sync.WaitGroup{}
-	ch := make(chan *archLuksSuspend.CryptDevice)
+	ch := make(chan *goLuksSuspend.CryptDevice)
 
 	wg.Add(1)
 	go func() {
@@ -177,8 +178,15 @@ func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []archLuksSuspend.CryptDev
 	for i := 0; i < n; i++ {
 		go func() {
 			for cd := range ch {
+				if ok, err := cd.CanResumeWithKeyfile(); err != nil {
+					assert(err)
+				} else if !ok {
+					continue
+				}
+
 				fmt.Fprintln(os.Stderr, "Resuming "+cd.Name)
-				assert(cd.LuksResume())
+				assert(cd.LuksResumeWithKeyfile())
+				fmt.Fprintln(os.Stderr, cd.Name+" resumed")
 			}
 			wg.Done()
 		}()
@@ -190,14 +198,14 @@ func resumeDevicesWithKeyfilesOrPoweroff(cryptdevices []archLuksSuspend.CryptDev
 func main() {
 	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
 	flag.Parse()
-	archLuksSuspend.DebugMode = *debug
-	l := archLuksSuspend.Log
+	goLuksSuspend.DebugMode = *debug
+	l := goLuksSuspend.Log
 
 	l("checking for suspend program in initramfs")
 	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
 	l("gathering cryptdevices")
-	cryptdevices, err := archLuksSuspend.GetCryptDevices()
+	cryptdevices, err := goLuksSuspend.GetCryptDevices()
 	assert(err)
 
 	defer func() {
@@ -220,11 +228,11 @@ func main() {
 	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
 
 	l("dumping list of cryptdevice names to initramfs")
-	assert(archLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
+	assert(goLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
 
 	l("calling suspend in initramfs chroot")
 	args := []string{"/suspend"}
-	if archLuksSuspend.DebugMode {
+	if goLuksSuspend.DebugMode {
 		args = append(args, "-debug")
 	}
 	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))

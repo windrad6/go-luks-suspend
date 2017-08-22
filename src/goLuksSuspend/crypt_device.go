@@ -1,4 +1,4 @@
-package archLuksSuspend
+package goLuksSuspend
 
 import (
 	"bufio"
@@ -54,19 +54,22 @@ func (cd *CryptDevice) IsSuspended() (bool, error) {
 	return buf[0] == '1', nil
 }
 
-// LuksResume resumes this CryptDevice. Does nothing and returns nil if this
-// CryptDevice is not suspended or lacks a keyfile.
-func (cd *CryptDevice) LuksResume() error {
+func (cd *CryptDevice) CanResumeWithKeyfile() (bool, error) {
 	if len(cd.Keyfile) == 0 {
-		return nil
+		return false, nil
 	}
 
 	if suspended, err := cd.IsSuspended(); err != nil {
-		return err
+		return false, err
 	} else if !suspended {
-		return nil
+		return false, nil
 	}
 
+	return true, nil
+}
+
+// LuksResumeWithKeyfile resumes this CryptDevice with its keyfile
+func (cd *CryptDevice) LuksResumeWithKeyfile() error {
 	return exec.Command("/usr/bin/cryptsetup", "--key-file", cd.Keyfile, "luksResume", cd.Name).Run()
 }
 

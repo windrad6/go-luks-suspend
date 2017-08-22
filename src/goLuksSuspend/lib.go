@@ -1,9 +1,8 @@
-package archLuksSuspend
+package goLuksSuspend
 
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,7 +20,7 @@ func Log(msg string) {
 // Poweroff attempts to shutdown the system via /proc/sysrq-trigger
 func Poweroff() {
 	if DebugMode {
-		fmt.Fprintln(os.Stderr, "POWEROFF")
+		log.Println("POWEROFF")
 		os.Exit(1)
 	}
 	for {
