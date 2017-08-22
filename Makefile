@@ -16,4 +16,7 @@ install: all
 	install -Dm644 initcpio-hook "$(DESTDIR)/usr/lib/initcpio/install/suspend"
 	install -Dm644 systemd-suspend.service "$(DESTDIR)/etc/systemd/system/systemd-suspend.service"
 
+clean:
+	rm -f arch-luks-suspend initramfs-suspend
+
 # vim:set sw=4 ts=4 noet:
