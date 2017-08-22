@@ -40,9 +40,8 @@ func Dump(path string, cryptdevices []CryptDevice) error {
 	buf := make([][]byte, len(cryptdevices))
 	j := 1
 	for i := range cryptdevices {
-		if cryptdevices[i].Mountpoint == "/" {
+		if cryptdevices[i].IsRootDevice {
 			if len(buf[0]) > 0 {
-				// Is this really an error?
 				return errors.New("multiple root cryptdevices")
 			}
 			buf[0] = []byte(cryptdevices[i].Name)

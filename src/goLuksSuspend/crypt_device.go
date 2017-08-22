@@ -19,6 +19,7 @@ type CryptDevice struct {
 	Mountpoint   string
 	Keyfile      string
 	NeedsRemount bool
+	IsRootDevice bool
 }
 
 // GetCryptDevices returns active non-root crypt devices from /etc/crypttab
@@ -34,11 +35,11 @@ func GetCryptDevices() ([]CryptDevice, error) {
 		cdmap[cryptdevices[i].DMDevice] = &cryptdevices[i] // to match entry in /proc/mounts
 	}
 
-	if err := addKeyfilesFromCrypttab(cdmap, "/etc/crypttab"); err != nil {
+	if err := addKeyfilesFromCrypttab(cdmap); err != nil {
 		return nil, err
 	}
 
-	if err := addMountInfo(cdmap, "/proc/mounts"); err != nil {
+	if err := addMountInfo(cdmap); err != nil {
 		return nil, err
 	}
 
@@ -81,12 +82,32 @@ func (cd *CryptDevice) EnableWriteBarrier() error {
 	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
+func getRootParamFromKernelCmdline() (string, error) {
+	buf, err := ioutil.ReadFile("/proc/cmdline")
+	if err != nil {
+		return "", err
+	}
+
+	for _, param := range strings.Fields(string(buf)) {
+		if len(param) > 5 && param[:5] == "root=" {
+			return param[5:], nil
+		}
+	}
+
+	return "", nil
+}
+
 func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
 	if err != nil {
 		return nil, err
 	} else if len(dirs) == 0 {
 		return nil, nil
+	}
+
+	rootdev, err := getRootParamFromKernelCmdline()
+	if err != nil {
+		return nil, err
 	}
 
 	cryptdevices := make([]CryptDevice, 0, len(dirs))
@@ -117,6 +138,9 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 
 		cd.Name = string(bytes.TrimSpace(name))
 		cd.DMDevice = "/dev/mapper/" + cd.Name
+		if cd.DMDevice == rootdev {
+			cd.IsRootDevice = true
+		}
 		cryptdevices = append(cryptdevices, cd)
 	}
 
@@ -125,8 +149,8 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
 
-func addKeyfilesFromCrypttab(cdmap map[string]*CryptDevice, crypttabPath string) error {
-	file, err := os.Open(crypttabPath)
+func addKeyfilesFromCrypttab(cdmap map[string]*CryptDevice) error {
+	file, err := os.Open("/etc/crypttab")
 	if err != nil {
 		return err
 	}
@@ -149,8 +173,8 @@ func addKeyfilesFromCrypttab(cdmap map[string]*CryptDevice, crypttabPath string)
 	return file.Close()
 }
 
-func addMountInfo(cdmap map[string]*CryptDevice, mountsPath string) error {
-	file, err := os.Open(mountsPath)
+func addMountInfo(cdmap map[string]*CryptDevice) error {
+	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		return err
 	}
