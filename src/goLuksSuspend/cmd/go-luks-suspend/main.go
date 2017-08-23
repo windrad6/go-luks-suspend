@@ -212,13 +212,14 @@ func main() {
 	cryptdevices, err := goLuksSuspend.GetCryptDevices()
 	assert(err)
 	if goLuksSuspend.DebugMode {
-		fmt.Println(cryptdevices)
+		log.Printf("%#v\n", cryptdevices)
 	}
 
 	defer func() {
 		l("unmounting initramfs bind mounts")
 		assert(unbindInitramfs())
 	}()
+
 	l("preparing initramfs chroot")
 	assert(bindInitramfs())
 
@@ -238,7 +239,7 @@ func main() {
 	assert(goLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
 	if goLuksSuspend.DebugMode {
 		buf, _ := ioutil.ReadFile(cryptdevicesPath) // errcheck: debugmode only
-		fmt.Printf("%s: %#v\n", cryptdevicesPath, string(buf))
+		log.Printf("%s: %#v\n", cryptdevicesPath, string(buf))
 	}
 
 	l("calling suspend in initramfs chroot")
