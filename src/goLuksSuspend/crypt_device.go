@@ -3,6 +3,7 @@ package goLuksSuspend
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -85,15 +86,26 @@ func (cd *CryptDevice) EnableWriteBarrier() error {
 	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
-func getRootParamFromKernelCmdline() (string, error) {
-	buf, err := ioutil.ReadFile("/proc/cmdline")
+var kernelCmdline = "/proc/cmdline"
+
+func getCryptdeviceFromKernelCmdline() (string, error) {
+	buf, err := ioutil.ReadFile(kernelCmdline)
 	if err != nil {
 		return "", err
 	}
 
-	for _, param := range strings.Fields(string(buf)) {
-		if len(param) > 5 && param[:5] == "root=" {
-			return param[5:], nil
+	params := strings.Fields(string(buf))
+
+	// Grab the last instance in case of duplicates
+	for i := len(params) - 1; i >= 0; i-- {
+		p := params[i]
+		if len(p) > 12 && p[:12] == "cryptdevice=" {
+			fields := strings.SplitN(p, ":", 3)
+			if len(fields) < 2 {
+				return "", errors.New("malformed cryptdevice= kernel parameter")
+			}
+
+			return fields[1], nil
 		}
 	}
 
@@ -108,7 +120,7 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 		return nil, nil
 	}
 
-	rootdev, err := getRootParamFromKernelCmdline()
+	rootdev, err := getCryptdeviceFromKernelCmdline()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +153,7 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 
 		cd.Name = string(bytes.TrimSpace(name))
 		cd.DMDevice = "/dev/mapper/" + cd.Name
-		if cd.DMDevice == rootdev {
+		if cd.Name == rootdev {
 			cd.IsRootDevice = true
 		}
 		cryptdevices = append(cryptdevices, cd)
