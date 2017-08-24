@@ -11,6 +11,7 @@ import (
 	"syscall"
 )
 
+var PoweroffOnError = true
 var DebugMode = false
 
 func Log(msg string) {
@@ -38,8 +39,14 @@ func Poweroff() {
 		}
 		os.Exit(1)
 	}
-	for {
-		_ = ioutil.WriteFile("/proc/sysrq-trigger", []byte{'o'}, 0600)
+
+	if PoweroffOnError {
+		for {
+			_ = ioutil.WriteFile("/proc/sysrq-trigger", []byte{'o'}, 0600)
+		}
+	} else {
+		log.Println("ABORT: rebooting is recommended to restore your machine to a working state")
+		os.Exit(1)
 	}
 }
 

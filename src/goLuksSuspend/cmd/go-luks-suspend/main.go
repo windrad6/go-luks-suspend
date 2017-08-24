@@ -26,14 +26,10 @@ var systemdServices = []string{
 	"systemd-journald.service",
 }
 
-var poweroffOnError = true
-
 func assert(err error) {
 	if err != nil {
 		log.Println(err)
-		if poweroffOnError {
-			goLuksSuspend.Poweroff()
-		}
+		goLuksSuspend.Poweroff()
 	}
 }
 
@@ -256,7 +252,7 @@ func main() {
 
 	// At this point the user has unlocked the root device, so avoid
 	// powering off the machine from here.
-	poweroffOnError = false
+	goLuksSuspend.PoweroffOnError = false
 
 	l("removing cryptdevice dump file")
 	assert(os.Remove(cryptdevicesPath))
