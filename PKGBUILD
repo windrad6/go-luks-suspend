@@ -1,8 +1,8 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
 pkgname=go-luks-suspend
-pkgver=1.0.0
-pkgrel=2
+pkgver=1.0.1
+pkgrel=1
 pkgdesc='Encrypt LUKS volumes on system suspend'
 arch=('x86_64')
 url="https://github.com/guns/go-luks-suspend"
