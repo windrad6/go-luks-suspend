@@ -11,7 +11,6 @@ import (
 	"syscall"
 )
 
-var PoweroffOnError = true
 var DebugMode = false
 
 func Log(msg string) {
@@ -24,11 +23,7 @@ func Log(msg string) {
 func Poweroff() {
 	if DebugMode {
 		log.Println("==========================================================")
-		if PoweroffOnError {
-			log.Println("  DEBUG SHELL: spawning /bin/sh instead of powering off!  ")
-		} else {
-			log.Println("    DEBUG SHELL: spawning /bin/sh instead of aborting!    ")
-		}
+		log.Println("  DEBUG SHELL: spawning /bin/sh instead of powering off!  ")
 		log.Println("   `exit 42` if go-luks-suspend should resume execution   ")
 		log.Println("==========================================================")
 		err := Run([]string{"PS1=[\\w \\u\\$] "}, []string{"/bin/sh"}, true) // errcheck: debugmode only
@@ -44,13 +39,8 @@ func Poweroff() {
 		os.Exit(1)
 	}
 
-	if PoweroffOnError {
-		for {
-			_ = ioutil.WriteFile("/proc/sysrq-trigger", []byte{'o'}, 0600)
-		}
-	} else {
-		log.Println("ABORT: rebooting is recommended to restore your machine to a working state")
-		os.Exit(1)
+	for {
+		_ = ioutil.WriteFile("/proc/sysrq-trigger", []byte{'o'}, 0600)
 	}
 }
 
