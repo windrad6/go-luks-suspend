@@ -75,7 +75,7 @@ func main() {
 	suspendCryptDevicesOrPoweroff(deviceNames)
 
 	if goLuksSuspend.DebugMode {
-		l("debug: skipping suspend to RAM")
+		l("debug mode: skipping suspend to RAM")
 	} else {
 		l("suspending system to RAM")
 		assert(goLuksSuspend.SuspendToRAM())

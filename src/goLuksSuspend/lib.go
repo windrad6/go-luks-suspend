@@ -24,7 +24,11 @@ func Log(msg string) {
 func Poweroff() {
 	if DebugMode {
 		log.Println("==========================================================")
-		log.Println("  DEBUG SHELL: spawning /bin/sh instead of powering off!  ")
+		if PoweroffOnError {
+			log.Println("  DEBUG SHELL: spawning /bin/sh instead of powering off!  ")
+		} else {
+			log.Println("    DEBUG SHELL: spawning /bin/sh instead of aborting!    ")
+		}
 		log.Println("   `exit 42` if go-luks-suspend should resume execution   ")
 		log.Println("==========================================================")
 		err := Run([]string{"PS1=[\\w \\u\\$] "}, []string{"/bin/sh"}, true) // errcheck: debugmode only
