@@ -126,22 +126,22 @@ func systemctlServices(command string) error {
 	)
 }
 
-const disableBarrier = false
-const enableBarrier = true
-
-func remountFilesystemsWithWriteBarriers(filesystems []goLuksSuspend.Filesystem, enable bool) (err error) {
+func disableWriteBarriers(filesystems []goLuksSuspend.Filesystem) error {
 	for i := range filesystems {
-		if enable {
-			err = filesystems[i].EnableWriteBarrier()
-		} else {
-			err = filesystems[i].DisableWriteBarrier()
-		}
-
-		if err != nil {
+		if err := filesystems[i].DisableWriteBarrier(); err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
+func enableWriteBarriers(filesystems []goLuksSuspend.Filesystem) error {
+	for i := range filesystems {
+		// The underlying device may have disappeared
+		if err := filesystems[i].EnableWriteBarrier(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -230,7 +230,7 @@ func main() {
 	syscall.Sync()
 
 	l("disabling write barriers on filesystems to avoid IO hangs")
-	assert(remountFilesystemsWithWriteBarriers(filesystems, disableBarrier))
+	assert(disableWriteBarriers(filesystems))
 
 	l("dumping list of cryptdevice names to initramfs")
 	assert(goLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
@@ -258,7 +258,7 @@ func main() {
 	resumeDevicesWithKeyfilesOrPoweroff(cryptdevices)
 
 	l("re-enabling write barriers on filesystems")
-	assert(remountFilesystemsWithWriteBarriers(filesystems, enableBarrier))
+	assert(enableWriteBarriers(filesystems))
 
 	l("starting previously stopped systemd services")
 	assert(systemctlServices("start"))

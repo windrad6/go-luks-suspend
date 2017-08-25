@@ -2,12 +2,16 @@ package goLuksSuspend
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 	"syscall"
 )
 
-type Filesystem string
+type Filesystem struct {
+	Mountpoint string
+	DevNo      uint64
+}
 
 func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
 	file, err := os.Open("/proc/mounts")
@@ -22,7 +26,15 @@ func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
 		fields := strings.Fields(s.Text())
 
 		if hasWriteBarrier(fields[2], fields[3]) {
-			fs = append(fs, Filesystem(fields[1]))
+			devno, err := lstatDevno(fields[1])
+			if err != nil {
+				return nil, err
+			}
+
+			fs = append(fs, Filesystem{
+				Mountpoint: fields[1],
+				DevNo:      devno,
+			})
 		}
 	}
 
@@ -33,16 +45,21 @@ func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
 	return fs, nil
 }
 
-func (fs Filesystem) Mountpoint() string {
-	return string(fs)
+func (fs Filesystem) IsMounted() bool {
+	devno, err := lstatDevno(fs.Mountpoint)
+	if err != nil {
+		return false
+	}
+
+	return fs.DevNo == devno
 }
 
 func (fs Filesystem) DisableWriteBarrier() error {
-	return syscall.Mount("", fs.Mountpoint(), "", syscall.MS_REMOUNT, "nobarrier")
+	return syscall.Mount("", fs.Mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
 }
 
 func (fs Filesystem) EnableWriteBarrier() error {
-	return syscall.Mount("", fs.Mountpoint(), "", syscall.MS_REMOUNT, "barrier")
+	return syscall.Mount("", fs.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
 func hasWriteBarrier(fstype, mountopts string) bool {
@@ -60,4 +77,21 @@ func hasWriteBarrier(fstype, mountopts string) bool {
 		return true
 	}
 	return false
+}
+
+func lstatDevno(path string) (uint64, error) {
+	// stat(2):
+	// On Linux, lstat() will generally not trigger automounter action,
+	// whereas stat() will
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return 0, err
+	}
+
+	st, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, fmt.Errorf("lstat %#v: no stat_t", path)
+	}
+
+	return st.Dev, nil
 }
