@@ -129,26 +129,16 @@ func systemctlServices(command string) error {
 const disableBarrier = false
 const enableBarrier = true
 
-func remountDevicesWithWriteBarriers(cryptdevices []goLuksSuspend.CryptDevice, enable bool) error {
-	for i := range cryptdevices {
-		if cryptdevices[i].NeedsRemount {
-			if suspended, err := cryptdevices[i].IsSuspended(); err != nil {
-				return err
-			} else if suspended {
-				continue
-			}
+func remountFilesystemsWithWriteBarriers(filesystems []goLuksSuspend.Filesystem, enable bool) (err error) {
+	for i := range filesystems {
+		if enable {
+			err = filesystems[i].EnableWriteBarrier()
+		} else {
+			err = filesystems[i].DisableWriteBarrier()
+		}
 
-			var err error
-
-			if enable {
-				err = cryptdevices[i].EnableWriteBarrier()
-			} else {
-				err = cryptdevices[i].DisableWriteBarrier()
-			}
-
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
 	}
 
@@ -215,6 +205,13 @@ func main() {
 		log.Printf("%#v\n", cryptdevices)
 	}
 
+	l("gathering filesystems with write barriers")
+	filesystems, err := goLuksSuspend.GetFilesystemsWithWriteBarriers()
+	assert(err)
+	if goLuksSuspend.DebugMode {
+		log.Printf("%#v\n", filesystems)
+	}
+
 	defer func() {
 		l("unmounting initramfs bind mounts")
 		assert(unbindInitramfs())
@@ -233,7 +230,7 @@ func main() {
 	syscall.Sync()
 
 	l("disabling write barriers on filesystems to avoid IO hangs")
-	assert(remountDevicesWithWriteBarriers(cryptdevices, disableBarrier))
+	assert(remountFilesystemsWithWriteBarriers(filesystems, disableBarrier))
 
 	l("dumping list of cryptdevice names to initramfs")
 	assert(goLuksSuspend.Dump(cryptdevicesPath, cryptdevices))
@@ -261,7 +258,7 @@ func main() {
 	resumeDevicesWithKeyfilesOrPoweroff(cryptdevices)
 
 	l("re-enabling write barriers on filesystems")
-	assert(remountDevicesWithWriteBarriers(cryptdevices, enableBarrier))
+	assert(remountFilesystemsWithWriteBarriers(filesystems, enableBarrier))
 
 	l("starting previously stopped systemd services")
 	assert(systemctlServices("start"))

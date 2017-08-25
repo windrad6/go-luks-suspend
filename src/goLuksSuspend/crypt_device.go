@@ -9,16 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
 )
 
 type CryptDevice struct {
 	Name         string
 	DMDir        string // /sys/block/dm-%d/dm
-	DMDevice     string // /dev/mapper/%s
-	Mountpoint   string
 	Keyfile      string
-	NeedsRemount bool
 	IsRootDevice bool
 }
 
@@ -29,17 +25,13 @@ func GetCryptDevices() ([]CryptDevice, error) {
 		return nil, err
 	}
 
-	cdmap := make(map[string]*CryptDevice, 2*len(cryptdevices))
+	cdmap := make(map[string]*CryptDevice, len(cryptdevices))
+
 	for i := range cryptdevices {
 		cdmap[cryptdevices[i].Name] = &cryptdevices[i]
-		cdmap[cryptdevices[i].DMDevice] = &cryptdevices[i] // to match entry in /proc/mounts
 	}
 
 	if err := addKeyfilesFromCrypttab(cdmap); err != nil {
-		return nil, err
-	}
-
-	if err := addMountInfo(cdmap); err != nil {
 		return nil, err
 	}
 
@@ -76,14 +68,6 @@ func (cd *CryptDevice) LuksResumeWithKeyfile() error {
 		[]string{"/usr/bin/cryptsetup", "--key-file", cd.Keyfile, "luksResume", cd.Name},
 		false,
 	)
-}
-
-func (cd *CryptDevice) DisableWriteBarrier() error {
-	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
-}
-
-func (cd *CryptDevice) EnableWriteBarrier() error {
-	return syscall.Mount("", cd.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
 var kernelCmdline = "/proc/cmdline"
@@ -152,7 +136,6 @@ func cryptDevicesFromSysfs() ([]CryptDevice, error) {
 		}
 
 		cd.Name = string(bytes.TrimSpace(name))
-		cd.DMDevice = "/dev/mapper/" + cd.Name
 		if cd.Name == rootdev {
 			cd.IsRootDevice = true
 		}
@@ -186,41 +169,4 @@ func addKeyfilesFromCrypttab(cdmap map[string]*CryptDevice) error {
 	}
 
 	return file.Close()
-}
-
-func addMountInfo(cdmap map[string]*CryptDevice) error {
-	file, err := os.Open("/proc/mounts")
-	if err != nil {
-		return err
-	}
-
-	s := bufio.NewScanner(file)
-
-	for s.Scan() {
-		fields := strings.Fields(s.Text())
-
-		if cd, ok := cdmap[fields[0]]; ok {
-			cd.Mountpoint = fields[1]
-			cd.NeedsRemount = needsRemount(fields[2], fields[3])
-		}
-	}
-
-	return file.Close()
-}
-
-func needsRemount(fstype, mountopts string) bool {
-	switch fstype {
-	// ReiserFS supports write barriers, but the option syntax appears to
-	// be unconventional. Since it's fading into obscurity, just ignore it.
-	case "ext3", "ext4", "btrfs":
-		for _, o := range strings.Split(mountopts, ",") {
-			// Write barriers are on by default and do not show up
-			// in the list of mount options, so check for the negative
-			if o == "barrier=0" || o == "nobarrier" {
-				return false
-			}
-		}
-		return true
-	}
-	return false
 }
