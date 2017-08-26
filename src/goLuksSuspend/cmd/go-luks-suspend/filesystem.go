@@ -1,29 +1,34 @@
-package goLuksSuspend
+package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"syscall"
 )
 
-type Filesystem struct {
-	Mountpoint string
-	DevNo      uint64
+type filesystem struct {
+	mountpoint string
+	devno      uint64
 }
 
-func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
+func getFilesystemsWithWriteBarriers() ([]filesystem, error) {
 	file, err := os.Open("/proc/mounts")
 	if err != nil {
 		return nil, err
 	}
 
-	fs := []Filesystem{}
+	fs := []filesystem{}
 	s := bufio.NewScanner(file)
 
 	for s.Scan() {
 		fields := strings.Fields(s.Text())
+
+		if len(fields) != 6 {
+			return nil, errors.New("malformed entry in /proc/mounts: " + s.Text())
+		}
 
 		if hasWriteBarrier(fields[2], fields[3]) {
 			devno, err := lstatDevno(fields[1])
@@ -31,9 +36,9 @@ func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
 				return nil, err
 			}
 
-			fs = append(fs, Filesystem{
-				Mountpoint: fields[1],
-				DevNo:      devno,
+			fs = append(fs, filesystem{
+				mountpoint: fields[1],
+				devno:      devno,
 			})
 		}
 	}
@@ -45,21 +50,21 @@ func GetFilesystemsWithWriteBarriers() ([]Filesystem, error) {
 	return fs, nil
 }
 
-func (fs Filesystem) IsMounted() bool {
-	devno, err := lstatDevno(fs.Mountpoint)
+func (fs filesystem) isMounted() bool {
+	devno, err := lstatDevno(fs.mountpoint)
 	if err != nil {
 		return false
 	}
 
-	return fs.DevNo == devno
+	return fs.devno == devno
 }
 
-func (fs Filesystem) DisableWriteBarrier() error {
-	return syscall.Mount("", fs.Mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
+func (fs filesystem) disableWriteBarrier() error {
+	return syscall.Mount("", fs.mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
 }
 
-func (fs Filesystem) EnableWriteBarrier() error {
-	return syscall.Mount("", fs.Mountpoint, "", syscall.MS_REMOUNT, "barrier")
+func (fs filesystem) enableWriteBarrier() error {
+	return syscall.Mount("", fs.mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 
 func hasWriteBarrier(fstype, mountopts string) bool {

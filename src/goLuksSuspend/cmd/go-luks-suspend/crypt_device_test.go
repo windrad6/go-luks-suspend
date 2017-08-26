@@ -1,4 +1,4 @@
-package goLuksSuspend
+package main
 
 import (
 	"io/ioutil"
@@ -7,9 +7,8 @@ import (
 )
 
 func TestKernelCmdlineParsing(t *testing.T) {
-	kernelCmdline = "test_kernel_cmdline"
-
-	defer os.Remove(kernelCmdline) // errcheck: rm -f
+	path := "test_kernel_cmdline"
+	defer os.Remove(path) // errcheck: rm -f
 
 	data := []struct {
 		in, out string
@@ -29,12 +28,12 @@ func TestKernelCmdlineParsing(t *testing.T) {
 	}
 
 	for _, row := range data {
-		err := ioutil.WriteFile(kernelCmdline, []byte(row.in), 0644)
+		err := ioutil.WriteFile(path, []byte(row.in), 0644)
 		if err != nil {
 			t.Errorf("unexpected error: %#v", err)
 		}
 
-		dev, err := getCryptdeviceFromKernelCmdline()
+		dev, err := getCryptdeviceFromKernelCmdline(path)
 		if err != nil {
 			t.Errorf("unexpected error: %#v", err)
 		}

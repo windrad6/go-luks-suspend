@@ -3,18 +3,46 @@ package main
 import (
 	"errors"
 	"flag"
+	"io/ioutil"
 	"log"
 	"runtime"
+	"strings"
 	"sync"
 
 	"goLuksSuspend"
 )
 
+var debugMode = false
+
+func debug(msg string) {
+	if debugMode {
+		warn(msg)
+	}
+}
+
+func warn(msg string) {
+	log.Println(msg)
+}
+
 func assert(err error) {
 	if err != nil {
-		log.Println(err)
-		goLuksSuspend.Poweroff()
+		warn(err.Error())
+		goLuksSuspend.Poweroff(debugMode)
 	}
+}
+
+// loadCryptnames loads the names written to a path by Dump
+func loadCryptnames(path string) ([]string, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(string(buf), "\x00"), nil
+}
+
+func suspendToRAM() error {
+	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
 }
 
 func suspendCryptDevicesOrPoweroff(deviceNames []string) {
@@ -35,7 +63,7 @@ func suspendCryptDevicesOrPoweroff(deviceNames []string) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for name := range ch {
-				goLuksSuspend.Log("suspending " + name)
+				debug("suspending " + name)
 				assert(goLuksSuspend.Run(
 					nil,
 					[]string{"/usr/bin/cryptsetup", "luksSuspend", name},
@@ -58,29 +86,28 @@ func luksResume(device string) error {
 }
 
 func main() {
-	debug := flag.Bool("debug", false, "do not poweroff the machine on errors")
+	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
 	flag.Parse()
-	goLuksSuspend.DebugMode = *debug
-	l := goLuksSuspend.Log
+	debugMode = *debugFlag
 
 	if flag.NArg() != 1 {
 		assert(errors.New("cryptmounts path unspecified"))
 	}
 
-	l("loading cryptdevice names")
-	deviceNames, err := goLuksSuspend.Load(flag.Arg(0))
+	debug("loading cryptdevice names")
+	cryptnames, err := loadCryptnames(flag.Arg(0))
 	assert(err)
 
-	l("suspending cryptdevices")
-	suspendCryptDevicesOrPoweroff(deviceNames)
+	debug("suspending cryptdevices")
+	suspendCryptDevicesOrPoweroff(cryptnames)
 
-	if goLuksSuspend.DebugMode {
-		l("debug mode: skipping suspend to RAM")
+	if debugMode {
+		debug("debug mode: skipping suspend to RAM")
 	} else {
-		l("suspending system to RAM")
-		assert(goLuksSuspend.SuspendToRAM())
+		debug("suspending system to RAM")
+		assert(suspendToRAM())
 	}
 
-	l("resuming root cryptdevice")
-	assert(luksResume(deviceNames[0]))
+	debug("resuming root cryptdevice")
+	assert(luksResume(cryptnames[0]))
 }
