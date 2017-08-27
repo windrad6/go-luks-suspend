@@ -87,8 +87,10 @@ func luksResume(device string) error {
 
 func main() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
+	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
 	debugMode = *debugFlag
+	poweroffOnUnlockFailure := *poweroffFlag
 
 	if flag.NArg() != 1 {
 		assert(errors.New("cryptmounts path unspecified"))
@@ -109,5 +111,12 @@ func main() {
 	}
 
 	debug("resuming root cryptdevice")
-	assert(luksResume(cryptnames[0]))
+	for {
+		err := luksResume(cryptnames[0])
+		if err == nil {
+			break
+		} else if poweroffOnUnlockFailure {
+			assert(err)
+		}
+	}
 }

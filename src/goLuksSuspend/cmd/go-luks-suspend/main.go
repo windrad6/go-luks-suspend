@@ -38,8 +38,10 @@ func assert(err error) {
 
 func main() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
+	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
 	debugMode = *debugFlag
+	poweroffOnUnlockFailure := *poweroffFlag
 
 	debug("gathering cryptdevices")
 	cryptdevs, err := getcryptdevices()
@@ -109,6 +111,9 @@ func main() {
 	args := []string{"/suspend"}
 	if debugMode {
 		args = append(args, "-debug")
+	}
+	if poweroffOnUnlockFailure {
+		args = append(args, "-poweroff")
 	}
 	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
 	assert(runInInitramfsChroot(args))
