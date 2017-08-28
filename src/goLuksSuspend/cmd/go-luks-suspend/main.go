@@ -3,13 +3,22 @@ package main
 import (
 	"flag"
 	"fmt"
-	"goLuksSuspend"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
+
+	"goLuksSuspend"
 )
+
+var systemdServices = []string{
+	// journald may attempt to write to the suspended device
+	"systemd-journald-dev-log.socket",
+	"systemd-journald.socket",
+	"systemd-journald.service",
+}
 
 const initramfsDir = "/run/initramfs"
 const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
@@ -77,11 +86,13 @@ func main() {
 	}()
 
 	debug("stopping selected system services")
-	assert(systemctlServices("stop"))
+	services, err := stopSystemServices(systemdServices)
+	assert(err)
+	debug("stopped " + strings.Join(services, ", "))
 
 	defer func() {
 		debug("starting previously stopped system services")
-		assert(systemctlServices("start"))
+		assert(startSystemServices(services))
 	}()
 
 	debug("flushing pending writes")

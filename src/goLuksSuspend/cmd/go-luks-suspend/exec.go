@@ -13,12 +13,6 @@ import (
 const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
 var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
-var systemdServices = []string{
-	// journald may attempt to write to the suspended device
-	"systemd-journald-dev-log.socket",
-	"systemd-journald.socket",
-	"systemd-journald.service",
-}
 
 func checkRootOwnedAndExecutablePath(path string) error {
 	fi, err := os.Stat(path)
@@ -106,12 +100,24 @@ func runSystemSuspendScripts(scriptarg string) error {
 	return nil
 }
 
-func systemctlServices(command string) error {
-	return goLuksSuspend.Run(
-		nil,
-		append([]string{"/usr/bin/systemctl", command}, systemdServices...),
-		false,
-	)
+var systemctlPath = "/usr/bin/systemctl"
+
+func stopSystemServices(services []string) (stoppedServices []string, err error) {
+	for _, s := range services {
+		if goLuksSuspend.Run(nil, []string{systemctlPath, "--quiet", "is-active", s}, false) == nil {
+			err := goLuksSuspend.Run(nil, []string{systemctlPath, "stop", s}, false)
+			if err != nil {
+				return stoppedServices, err
+			}
+			stoppedServices = append(stoppedServices, s)
+		}
+	}
+
+	return stoppedServices, nil
+}
+
+func startSystemServices(services []string) error {
+	return goLuksSuspend.Run(nil, append([]string{systemctlPath, "start"}, services...), false)
 }
 
 func disableWriteBarriers(filesystems []filesystem) error {
