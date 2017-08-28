@@ -121,15 +121,7 @@ func main() {
 	}()
 
 	debug("calling suspend in initramfs chroot")
-	args := []string{"/suspend"}
-	if debugMode {
-		args = append(args, "-debug")
-	}
-	if poweroffOnUnlockFailure {
-		args = append(args, "-poweroff")
-	}
-	args = append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
-	assert(runInInitramfsChroot(args))
+	assert(runInInitramfsChroot(suspendCmdline(debugMode, poweroffOnUnlockFailure)))
 
 	defer func() {
 		debug("resuming cryptdevices with keyfiles")

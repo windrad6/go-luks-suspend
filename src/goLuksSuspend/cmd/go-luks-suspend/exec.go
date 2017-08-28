@@ -151,6 +151,17 @@ func enableWriteBarriers(filesystems []filesystem) {
 	}
 }
 
+func suspendCmdline(debug, poweroff bool) []string {
+	args := []string{"/suspend"}
+	if debug {
+		args = append(args, "-debug")
+	}
+	if poweroff {
+		args = append(args, "-poweroff")
+	}
+	return append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
+}
+
 func runInInitramfsChroot(cmdline []string) error {
 	chroot := make([]string, 0, len(cmdline)+2)
 	chroot = append(chroot, "/usr/bin/chroot", initramfsDir)
