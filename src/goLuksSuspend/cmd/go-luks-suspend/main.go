@@ -15,8 +15,10 @@ import (
 
 var systemdServices = []string{
 	// journald may attempt to write to the suspended device
-	"systemd-journald-dev-log.socket",
+	"syslog.socket",
 	"systemd-journald.socket",
+	"systemd-journald-dev-log.socket",
+	"systemd-journald-audit.socket",
 	"systemd-journald.service",
 }
 

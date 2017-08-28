@@ -103,13 +103,18 @@ func runSystemSuspendScripts(scriptarg string) error {
 var systemctlPath = "/usr/bin/systemctl"
 
 func stopSystemServices(services []string) (stoppedServices []string, err error) {
+	// Stopping one service may deactivate another so it is necessary to
+	// record which services are active first
 	for _, s := range services {
 		if goLuksSuspend.Run(nil, []string{systemctlPath, "--quiet", "is-active", s}, false) == nil {
-			err := goLuksSuspend.Run(nil, []string{systemctlPath, "stop", s}, false)
-			if err != nil {
-				return stoppedServices, err
-			}
 			stoppedServices = append(stoppedServices, s)
+		}
+	}
+
+	for _, s := range stoppedServices {
+		err := goLuksSuspend.Run(nil, []string{systemctlPath, "stop", s}, false)
+		if err != nil {
+			return stoppedServices, err
 		}
 	}
 
