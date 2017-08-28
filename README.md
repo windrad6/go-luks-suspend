@@ -39,7 +39,9 @@ Installation
 
 3. Rebuild the initramfs: `mkinitcpio -p linux`.
 
-4. Reboot.
+4. Enable the service: `systemctl enable go-luks-suspend.service`
+
+5. Reboot.
 
 
 Unlocking non-root LUKS volumes on wake

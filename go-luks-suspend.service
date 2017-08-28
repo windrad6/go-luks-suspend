@@ -14,6 +14,9 @@ DefaultDependencies=no
 Requires=sleep.target
 After=sleep.target
 
+[Install]
+Alias=systemd-suspend.service
+
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/openvt -ws /usr/lib/go-luks-suspend/go-luks-suspend

@@ -14,7 +14,7 @@ install: all
 	install -Dm755 go-luks-suspend "$(DESTDIR)$(INSTALL_DIR)/go-luks-suspend"
 	install -Dm755 initramfs-suspend "$(DESTDIR)$(INSTALL_DIR)/initramfs-suspend"
 	install -Dm644 initcpio-hook "$(DESTDIR)/usr/lib/initcpio/install/suspend"
-	install -Dm644 systemd-suspend.service "$(DESTDIR)/etc/systemd/system/systemd-suspend.service"
+	install -Dm644 go-luks-suspend.service "$(DESTDIR)/usr/lib/systemd/system/go-luks-suspend.service"
 
 clean:
 	rm -f go-luks-suspend initramfs-suspend
