@@ -10,10 +10,6 @@ import (
 	"syscall"
 )
 
-const systemSleepDir = "/usr/lib/systemd/system-sleep"
-
-var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
-
 func checkRootOwnedAndExecutablePath(path string) error {
 	fi, err := os.Stat(path)
 	if err != nil {
@@ -45,6 +41,8 @@ func checkRootOwnedAndExecutable(fi os.FileInfo) error {
 	return nil
 }
 
+var bindDirs = []string{"/sys", "/proc", "/dev", "/run"}
+
 func unbindInitramfs() error {
 	for _, dir := range bindDirs {
 		d := filepath.Join(initramfsDir, dir)
@@ -65,6 +63,8 @@ func bindInitramfs() error {
 	}
 	return nil
 }
+
+const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
 func runSystemSuspendScripts(scriptarg string) error {
 	dir, err := os.Open(systemSleepDir)

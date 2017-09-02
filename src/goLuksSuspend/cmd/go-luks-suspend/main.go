@@ -13,6 +13,8 @@ import (
 	"goLuksSuspend"
 )
 
+var debugMode = false
+var poweroffOnError = true
 var systemdServices = []string{
 	// journald may attempt to write to the suspended device
 	"syslog.socket",
@@ -21,12 +23,6 @@ var systemdServices = []string{
 	"systemd-journald-audit.socket",
 	"systemd-journald.service",
 }
-
-const initramfsDir = "/run/initramfs"
-const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
-
-var debugMode = false
-var poweroffOnError = true
 
 func debug(msg string) {
 	if debugMode {
@@ -46,6 +42,9 @@ func assert(err error) {
 		}
 	}
 }
+
+const initramfsDir = "/run/initramfs"
+const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
 
 func main() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
