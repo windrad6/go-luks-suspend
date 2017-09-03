@@ -1,11 +1,12 @@
 package main
 
 import (
-	"goLuksSuspend"
 	"io/ioutil"
 	"runtime"
 	"strings"
 	"sync"
+
+	"goLuksSuspend"
 )
 
 // loadCryptnames loads the names written to a path by Dump
