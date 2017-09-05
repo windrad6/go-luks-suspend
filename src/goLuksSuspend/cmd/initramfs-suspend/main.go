@@ -9,6 +9,7 @@ import (
 )
 
 var debugMode = false
+var poweroffOnError = true
 
 func debug(msg string) {
 	if debugMode {
@@ -23,7 +24,9 @@ func warn(msg string) {
 func assert(err error) {
 	if err != nil {
 		warn(err.Error())
-		goLuksSuspend.Poweroff(debugMode)
+		if poweroffOnError {
+			goLuksSuspend.Poweroff(debugMode)
+		}
 	}
 }
 
@@ -44,6 +47,9 @@ func main() {
 
 	debug("suspending cryptdevices")
 	suspendCryptDevicesOrPoweroff(cryptnames)
+
+	// Crypt keys have been purged, so be less paranoid
+	poweroffOnError = false
 
 	if debugMode {
 		debug("debug mode: skipping suspend to RAM")
