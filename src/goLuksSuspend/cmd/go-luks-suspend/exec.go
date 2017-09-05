@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"goLuksSuspend"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -87,11 +87,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 			continue
 		}
 
-		err := goLuksSuspend.Run(
-			nil,
-			[]string{filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend"},
-			false,
-		)
+		err := exec.Command(filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend").Run()
 		if err != nil {
 			return err
 		}
@@ -106,14 +102,13 @@ func stopSystemServices(services []string) (stoppedServices []string, err error)
 	// Stopping one service may deactivate another so it is necessary to
 	// record which services are active first
 	for _, s := range services {
-		if goLuksSuspend.Run(nil, []string{systemctlPath, "--quiet", "is-active", s}, false) == nil {
+		if exec.Command(systemctlPath, "--quiet", "is-active", s).Run() == nil {
 			stoppedServices = append(stoppedServices, s)
 		}
 	}
 
 	for _, s := range stoppedServices {
-		err := goLuksSuspend.Run(nil, []string{systemctlPath, "stop", s}, false)
-		if err != nil {
+		if exec.Command(systemctlPath, "stop", s).Run() != nil {
 			return stoppedServices, err
 		}
 	}
@@ -122,7 +117,7 @@ func stopSystemServices(services []string) (stoppedServices []string, err error)
 }
 
 func startSystemServices(services []string) error {
-	return goLuksSuspend.Run(nil, append([]string{systemctlPath, "start"}, services...), false)
+	return exec.Command(systemctlPath, append([]string{"start"}, services...)...).Run()
 }
 
 func disableWriteBarriers(filesystems []filesystem) error {
@@ -163,10 +158,12 @@ func suspendCmdline(debug, poweroff bool) []string {
 }
 
 func runInInitramfsChroot(cmdline []string) error {
-	chroot := make([]string, 0, len(cmdline)+2)
-	chroot = append(chroot, "/usr/bin/chroot", initramfsDir)
-	chroot = append(chroot, cmdline...)
-	return goLuksSuspend.Run([]string{}, chroot, true)
+	cmd := exec.Command("/usr/bin/chroot", append([]string{initramfsDir}, cmdline...)...)
+	cmd.Env = []string{}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func resumeDevicesWithKeyfiles(cryptdevs []cryptdevice) {

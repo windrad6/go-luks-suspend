@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"goLuksSuspend"
 )
 
 type cryptdevice struct {
@@ -63,11 +62,7 @@ func (cd *cryptdevice) suspended() bool {
 }
 
 func (cd *cryptdevice) resumeWithKeyfile() error {
-	return goLuksSuspend.Run(
-		nil,
-		[]string{"/usr/bin/cryptsetup", "--key-file", cd.keyfile, "luksResume", cd.name},
-		false,
-	)
+	return exec.Command("/usr/bin/cryptsetup", "--key-file", cd.keyfile, "luksResume", cd.name).Run()
 }
 
 func dumpCryptdevices(path string, cryptdevs []cryptdevice) error {
