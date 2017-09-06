@@ -51,12 +51,8 @@ func main() {
 	// Crypt keys have been purged, so be less paranoid
 	poweroffOnError = false
 
-	if debugMode {
-		debug("debug mode: skipping suspend to RAM")
-	} else {
-		debug("suspending system to RAM")
-		assert(suspendToRAM())
-	}
+	debug("suspending system to RAM")
+	assert(suspendToRAM())
 
 	debug("resuming root cryptdevice")
 	for {
