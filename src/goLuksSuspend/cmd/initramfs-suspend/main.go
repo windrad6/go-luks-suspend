@@ -60,6 +60,7 @@ func main() {
 		if err == nil {
 			break
 		} else if poweroffOnUnlockFailure {
+			poweroffOnError = true
 			assert(err)
 		}
 	}
