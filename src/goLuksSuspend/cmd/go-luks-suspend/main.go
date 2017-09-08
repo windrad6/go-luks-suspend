@@ -13,12 +13,16 @@ import (
 )
 
 var systemdServices = []string{
-	// journald may attempt to write to the suspended device
+	// journald may attempt to write to root device
 	"syslog.socket",
 	"systemd-journald.socket",
 	"systemd-journald-dev-log.socket",
 	"systemd-journald-audit.socket",
 	"systemd-journald.service",
+	// udevd often attempts to read from the root device
+	"systemd-udevd-control.socket",
+	"systemd-udevd-kernel.socket",
+	"systemd-udevd.service",
 }
 
 const initramfsDir = "/run/initramfs"
