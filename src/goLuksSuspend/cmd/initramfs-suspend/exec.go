@@ -21,7 +21,7 @@ func loadCryptnames(path string) ([]string, error) {
 
 func suspendToRAM() error {
 	if debugMode {
-		debug("skipping suspend to RAM")
+		debug("debug: skipping suspend to RAM")
 		return nil
 	}
 	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
