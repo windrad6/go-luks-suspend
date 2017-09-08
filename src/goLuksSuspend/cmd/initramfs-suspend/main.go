@@ -3,62 +3,37 @@ package main
 import (
 	"errors"
 	"flag"
-	"log"
 
-	"goLuksSuspend"
+	g "goLuksSuspend"
 )
-
-var debugMode = false
-var poweroffOnError = true
-
-func debug(msg string) {
-	if debugMode {
-		warn(msg)
-	}
-}
-
-func warn(msg string) {
-	log.Println(msg)
-}
-
-func assert(err error) {
-	if err != nil {
-		warn(err.Error())
-		if debugMode {
-			goLuksSuspend.DebugShell()
-		} else if poweroffOnError {
-			goLuksSuspend.Poweroff()
-		}
-	}
-}
 
 func main() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
 	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
-	debugMode = *debugFlag
+	g.DebugMode = *debugFlag
 	poweroffOnUnlockFailure := *poweroffFlag
 
 	if flag.NArg() != 1 {
-		assert(errors.New("cryptmounts path unspecified"))
+		g.Assert(errors.New("cryptmounts path unspecified"))
 	}
 
-	debug("loading cryptdevice names")
+	g.Debug("loading cryptdevice names")
 	cryptnames, err := loadCryptnames(flag.Arg(0))
-	assert(err)
+	g.Assert(err)
 
-	debug("suspending cryptdevices")
+	g.Debug("suspending cryptdevices")
 	suspendCryptDevicesOrPoweroff(cryptnames)
 
 	// Crypt keys have been purged, so be less paranoid
-	poweroffOnError = false
+	g.PoweroffOnError = false
 
-	debug("suspending system to RAM")
-	assert(suspendToRAM())
+	g.Debug("suspending system to RAM")
+	g.Assert(g.SuspendToRAM())
 
 loop:
 	for {
-		debug("resuming root cryptdevice")
+		g.Debug("resuming root cryptdevice")
 		var err error
 		for i := 0; i < 3; i++ {
 			err = resumeRootCryptDevice(cryptnames[0])
@@ -67,8 +42,8 @@ loop:
 			}
 		}
 		if poweroffOnUnlockFailure {
-			poweroffOnError = true
-			assert(err)
+			g.PoweroffOnError = true
+			g.Assert(err)
 		}
 	}
 }

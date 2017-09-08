@@ -8,6 +8,30 @@ import (
 	"syscall"
 )
 
+var DebugMode = false
+var PoweroffOnError = true
+
+func Debug(msg string) {
+	if DebugMode {
+		Warn(msg)
+	}
+}
+
+func Warn(msg string) {
+	log.Println(msg)
+}
+
+func Assert(err error) {
+	if err != nil {
+		Warn(err.Error())
+		if DebugMode {
+			DebugShell()
+		} else if PoweroffOnError {
+			Poweroff()
+		}
+	}
+}
+
 func DebugShell() (ok bool) {
 	log.Println("===============================================================")
 	log.Println("  DEBUG: `exit 42` if go-luks-suspend should resume execution  ")
@@ -28,6 +52,14 @@ func DebugShell() (ok bool) {
 	}
 
 	return false
+}
+
+func SuspendToRAM() error {
+	if DebugMode {
+		Debug("debug: skipping suspend to RAM")
+		return nil
+	}
+	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
 }
 
 func Poweroff() {

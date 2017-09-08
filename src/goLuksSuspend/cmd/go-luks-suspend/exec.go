@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
+
+	g "goLuksSuspend"
 )
 
 func checkRootOwnedAndExecutablePath(path string) error {
@@ -83,7 +85,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 
 	for i := range fs {
 		if err := checkRootOwnedAndExecutable(fs[i]); err != nil {
-			warn(err.Error())
+			g.Warn(err.Error())
 			continue
 		}
 
@@ -133,11 +135,11 @@ func enableWriteBarriers(filesystems []filesystem) {
 	for i := range filesystems {
 		// The underlying device may have disappeared
 		if !filesystems[i].isMounted() {
-			warn("[WARNING] missing filesystem mounted at " + filesystems[i].mountpoint)
+			g.Warn("[WARNING] missing filesystem mounted at " + filesystems[i].mountpoint)
 			continue
 		}
 		if err := filesystems[i].enableWriteBarrier(); err != nil {
-			warn(fmt.Sprintf(
+			g.Warn(fmt.Sprintf(
 				"[WARNING] mount -o remount,barrier %s: %s",
 				filesystems[i].mountpoint,
 				err.Error(),
@@ -189,20 +191,20 @@ func resumeDevicesWithKeyfiles(cryptdevs []cryptdevice) {
 				if !cd.suspended() {
 					continue
 				} else if !cd.exists() {
-					warn("[WARNING] missing cryptdevice " + cd.name)
+					g.Warn("[WARNING] missing cryptdevice " + cd.name)
 					continue
 				} else if len(cd.keyfile) == 0 {
-					warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.name))
+					g.Warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.name))
 					continue
 				}
 
-				warn("Resuming " + cd.name)
+				g.Warn("Resuming " + cd.name)
 
 				err := cd.resumeWithKeyfile()
 				if err != nil {
-					warn(fmt.Sprintf("[ERROR] failed to resume %s: %s", cd.name, err.Error()))
+					g.Warn(fmt.Sprintf("[ERROR] failed to resume %s: %s", cd.name, err.Error()))
 				} else {
-					warn(cd.name + " resumed")
+					g.Warn(cd.name + " resumed")
 				}
 			}
 			wg.Done()

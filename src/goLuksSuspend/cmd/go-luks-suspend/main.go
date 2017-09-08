@@ -4,17 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
-	"goLuksSuspend"
+	g "goLuksSuspend"
 )
 
-var debugMode = false
-var poweroffOnError = true
 var systemdServices = []string{
 	// journald may attempt to write to the suspended device
 	"syslog.socket",
@@ -24,27 +21,6 @@ var systemdServices = []string{
 	"systemd-journald.service",
 }
 
-func debug(msg string) {
-	if debugMode {
-		warn(msg)
-	}
-}
-
-func warn(msg string) {
-	log.Println(msg)
-}
-
-func assert(err error) {
-	if err != nil {
-		warn(err.Error())
-		if debugMode {
-			goLuksSuspend.DebugShell()
-		} else if poweroffOnError {
-			goLuksSuspend.Poweroff()
-		}
-	}
-}
-
 const initramfsDir = "/run/initramfs"
 const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
 
@@ -52,83 +28,83 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
 	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
-	debugMode = *debugFlag
+	g.DebugMode = *debugFlag
 	poweroffOnUnlockFailure := *poweroffFlag
 
-	debug("gathering cryptdevices")
+	g.Debug("gathering cryptdevices")
 	cryptdevs, err := getcryptdevices()
-	assert(err)
-	if debugMode {
-		debug(fmt.Sprintf("%#v", cryptdevs))
+	g.Assert(err)
+	if g.DebugMode {
+		g.Debug(fmt.Sprintf("%#v", cryptdevs))
 	}
 
-	debug("gathering filesystems with write barriers")
+	g.Debug("gathering filesystems with write barriers")
 	filesystems, err := getFilesystemsWithWriteBarriers()
-	assert(err)
-	if debugMode {
-		debug(fmt.Sprintf("%#v", filesystems))
+	g.Assert(err)
+	if g.DebugMode {
+		g.Debug(fmt.Sprintf("%#v", filesystems))
 	}
 
-	debug("checking for suspend program in initramfs")
-	assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
+	g.Debug("checking for suspend program in initramfs")
+	g.Assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
-	debug("preparing initramfs chroot")
-	assert(bindInitramfs())
-
-	defer func() {
-		debug("unmounting initramfs bind mounts")
-		assert(unbindInitramfs())
-	}()
-
-	debug("running pre-suspend scripts")
-	assert(runSystemSuspendScripts("pre"))
+	g.Debug("preparing initramfs chroot")
+	g.Assert(bindInitramfs())
 
 	defer func() {
-		debug("running post-suspend scripts")
-		assert(runSystemSuspendScripts("post"))
+		g.Debug("unmounting initramfs bind mounts")
+		g.Assert(unbindInitramfs())
 	}()
 
-	debug("stopping selected system services")
+	g.Debug("running pre-suspend scripts")
+	g.Assert(runSystemSuspendScripts("pre"))
+
+	defer func() {
+		g.Debug("running post-suspend scripts")
+		g.Assert(runSystemSuspendScripts("post"))
+	}()
+
+	g.Debug("stopping selected system services")
 	services, err := stopSystemServices(systemdServices)
-	assert(err)
-	debug("stopped " + strings.Join(services, ", "))
+	g.Assert(err)
+	g.Debug("stopped " + strings.Join(services, ", "))
 
 	defer func() {
-		debug("starting previously stopped system services")
-		assert(startSystemServices(services))
+		g.Debug("starting previously stopped system services")
+		g.Assert(startSystemServices(services))
 	}()
 
-	debug("flushing pending writes")
+	g.Debug("flushing pending writes")
 	syscall.Sync()
 
-	debug("disabling write barriers on filesystems to avoid IO hangs")
-	assert(disableWriteBarriers(filesystems))
+	g.Debug("disabling write barriers on filesystems to avoid IO hangs")
+	g.Assert(disableWriteBarriers(filesystems))
 
 	defer func() {
-		debug("re-enabling write barriers on filesystems")
+		g.Debug("re-enabling write barriers on filesystems")
 		enableWriteBarriers(filesystems)
 	}()
 
-	debug("dumping list of cryptdevice names to initramfs")
-	assert(dumpCryptdevices(cryptdevicesPath, cryptdevs))
-	if debugMode {
+	g.Debug("dumping list of cryptdevice names to initramfs")
+	g.Assert(dumpCryptdevices(cryptdevicesPath, cryptdevs))
+	if g.DebugMode {
 		buf, _ := ioutil.ReadFile(cryptdevicesPath) // errcheck: debugmode only
-		debug(fmt.Sprintf("%s: %#v", cryptdevicesPath, string(buf)))
+		g.Debug(fmt.Sprintf("%s: %#v", cryptdevicesPath, string(buf)))
 	}
 
 	defer func() {
-		debug("removing cryptdevice dump file")
-		assert(os.Remove(cryptdevicesPath))
+		g.Debug("removing cryptdevice dump file")
+		g.Assert(os.Remove(cryptdevicesPath))
 	}()
 
-	debug("calling suspend in initramfs chroot")
-	assert(runInInitramfsChroot(suspendCmdline(debugMode, poweroffOnUnlockFailure)))
+	g.Debug("calling suspend in initramfs chroot")
+	g.Assert(runInInitramfsChroot(suspendCmdline(g.DebugMode, poweroffOnUnlockFailure)))
 
 	defer func() {
-		debug("resuming cryptdevices with keyfiles")
+		g.Debug("resuming cryptdevices with keyfiles")
 		resumeDevicesWithKeyfiles(cryptdevs)
 	}()
 
 	// User has unlocked the root device, so let's be less paranoid
-	poweroffOnError = false
+	g.PoweroffOnError = false
 }

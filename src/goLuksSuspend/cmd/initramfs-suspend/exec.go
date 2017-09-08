@@ -11,6 +11,8 @@ import (
 	"sync"
 	"syscall"
 
+	g "goLuksSuspend"
+
 	"github.com/guns/golibs/editreader"
 	"github.com/guns/golibs/sys"
 )
@@ -23,14 +25,6 @@ func loadCryptnames(path string) ([]string, error) {
 	}
 
 	return strings.Split(string(buf), "\x00"), nil
-}
-
-func suspendToRAM() error {
-	if debugMode {
-		debug("debug: skipping suspend to RAM")
-		return nil
-	}
-	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
 }
 
 func suspendCryptDevicesOrPoweroff(deviceNames []string) {
@@ -51,8 +45,8 @@ func suspendCryptDevicesOrPoweroff(deviceNames []string) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for name := range ch {
-				debug("suspending " + name)
-				assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", name).Run())
+				g.Debug("suspending " + name)
+				g.Assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", name).Run())
 			}
 			wg.Done()
 		}()
@@ -80,13 +74,13 @@ func resumeRootCryptDevice(rootdev string) error {
 	if restoreTTY != nil {
 		defer func() {
 			if !ttyRestored {
-				assert(restoreTTY())
+				g.Assert(restoreTTY())
 			}
 		}()
 	}
 
 	if err != nil {
-		warn(err.Error())
+		g.Warn(err.Error())
 		return luksResume(rootdev, os.Stdin)
 	}
 
@@ -96,13 +90,13 @@ func resumeRootCryptDevice(rootdev string) error {
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {
 		switch b {
 		case 0x1b: // ^[
-			assert(suspendToRAM())
+			g.Assert(g.SuspendToRAM())
 			return editreader.Kill
 		case 0x17: // ^W
 			return editreader.Kill
 		case '\n':
 			fmt.Println()
-			assert(restoreTTY())
+			g.Assert(restoreTTY())
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
 		default:
