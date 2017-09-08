@@ -59,7 +59,11 @@ func SetFreezeTimeout(timeout []byte) (oldtimeout []byte, err error) {
 }
 
 func SuspendToRAM() error {
-	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
+	err := ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
+	if err != nil {
+		return fmt.Errorf("%s\n\nSuspend to RAM failed. Unlock the root volume and investigate `dmesg`.", err.Error())
+	}
+	return nil
 }
 
 func Poweroff() {

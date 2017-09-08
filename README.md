@@ -44,12 +44,14 @@ Installation
 5. Reboot.
 
 
-Unlocking non-root LUKS volumes on wake
----------------------------------------
+Q. How do I unlock non-root LUKS volumes on wake?
+-------------------------------------------------
 
-`go-luks-suspend` locks all active LUKS volumes on the system, but will only
-unlock non-root LUKS volumes that have an entry in `/etc/crypttab` with a
-corresponding keyfile:
+A. `go-luks-suspend` locks all active LUKS volumes on the system, but will
+only prompt the user to unlock the root volume on wake.
+
+To unlock a non-root LUKS volume, add an entry with a keyfile in
+`/etc/crypttab`:
 
 ```ini
 # /etc/crypttab
@@ -65,32 +67,65 @@ concurrently on wake after the user successfully unlocks the root volume with
 a passphrase.
 
 
-Poweroff on error
------------------
+Q. How do I poweroff the system on errors?
+------------------------------------------
 
-`go-luks-suspend` can power off the machine on error and when the user fails
-to unlock the root volume on wake. This behavior can be enabled by adding the
-`-poweroff` flag to the `ExecStart` line in the service file:
+A. The `-poweroff` flag instructs `go-luks-suspend` to power off the machine
+on error or when the user fails to unlock the root volume on wake. To add this
+flag to the `go-luks-suspend` command line:
+
+1. Create an edited copy of the service file:
+
+```
+# systemctl edit --full go-luks-suspend.service
+```
+
+2. Add the `-poweroff` flag to the ExecStart line:
 
 ```ini
-# /etc/systemd/system/systemd-suspend.service
 …
-
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/openvt -ws /usr/lib/go-luks-suspend/go-luks-suspend -poweroff
+ExecStart=/usr/bin/openvt -ws -- /usr/lib/go-luks-suspend/go-luks-suspend -poweroff
+```
+
+3. Re-enable `go-luks-suspend`:
+
+```
+# systemctl disable go-luks-suspend.service
+# systemctl enable go-luks-suspend.service
 ```
 
 
-Debug mode
-----------
+Q. How do I run go-luks-suspend in debug mode?
+----------------------------------------------
 
-Running `go-luks-suspend` in debug mode prints debugging messages and spawns a
-rescue shell on error.
+A. Run `go-luks-suspend` with the `-debug` flag to print debugging messages
+and to spawn a rescue shell on errors.
 
 ```
 # /usr/lib/go-luks-suspend/go-luks-suspend -debug
 ```
+
+
+Q. My system doesn't re-suspend with the Escape key after wake but before unlock!
+----------------------------------------------------------------------------------
+
+A. The kernel calls [`thaw_processes()`][thaw] after waking the system from
+suspend. This wakes up all processes on the system, any of which may initiate
+IO with a locked LUKS volume.
+
+These processes, in turn, refuse to be frozen by `freeze_processes()`, which
+is called during the system suspend sequence. Because the kernel refuses to
+suspend the system until the hanging processes are frozen, the only way to
+re-suspend the system at this point is unlock the affected LUKS volume, let
+the IO complete, and try again.
+
+In practice, network IO after wake is the largest reason that suspend fails
+after-wake-but-before-unlock. It is therefore recommended that you bring down
+the machine's network interfaces before suspend and restore them on wake.
+
+[thaw]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/power/freezing-of-tasks.txt
 
 
 Authors and license
