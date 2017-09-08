@@ -1,0 +1,26 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/guns/golibs/editreader",
+			"repository": "https://github.com/guns/golibs",
+			"revision": "9702a3ed587398ff6dce80fc5f5d3f6c34b33960",
+			"branch": "master",
+			"path": "/editreader"
+		},
+		{
+			"importpath": "github.com/guns/golibs/sys",
+			"repository": "https://github.com/guns/golibs",
+			"revision": "9702a3ed587398ff6dce80fc5f5d3f6c34b33960",
+			"branch": "master",
+			"path": "/sys"
+		},
+		{
+			"importpath": "golang.org/x/sys/unix",
+			"repository": "https://go.googlesource.com/sys",
+			"revision": "a45f55524b7ec57890cfa6c6bc06b47f877be0d1",
+			"branch": "master",
+			"path": "/unix"
+		}
+	]
+}

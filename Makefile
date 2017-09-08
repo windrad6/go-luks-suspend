@@ -1,14 +1,15 @@
 .PHONY: all install
 
 INSTALL_DIR := /usr/lib/go-luks-suspend
+GOPATH := "$(CURDIR):$(CURDIR)/vendor"
 
 all: go-luks-suspend initramfs-suspend
 
 go-luks-suspend:
-	GOPATH="$(CURDIR)" go build goLuksSuspend/cmd/go-luks-suspend
+	GOPATH="$(GOPATH)" go build goLuksSuspend/cmd/go-luks-suspend
 
 initramfs-suspend:
-	GOPATH="$(CURDIR)" go build goLuksSuspend/cmd/initramfs-suspend
+	GOPATH="$(GOPATH)" go build goLuksSuspend/cmd/initramfs-suspend
 
 install: all
 	install -Dm755 go-luks-suspend "$(DESTDIR)$(INSTALL_DIR)/go-luks-suspend"
