@@ -54,12 +54,17 @@ func main() {
 	debug("suspending system to RAM")
 	assert(suspendToRAM())
 
-	debug("resuming root cryptdevice")
+loop:
 	for {
-		err := luksResume(cryptnames[0])
-		if err == nil {
-			break
-		} else if poweroffOnUnlockFailure {
+		debug("resuming root cryptdevice")
+		var err error
+		for i := 0; i < 3; i++ {
+			err = resumeRootCryptDevice(cryptnames[0])
+			if err == nil {
+				break loop
+			}
+		}
+		if poweroffOnUnlockFailure {
 			poweroffOnError = true
 			assert(err)
 		}
