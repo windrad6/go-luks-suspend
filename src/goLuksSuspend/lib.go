@@ -9,7 +9,7 @@ import (
 )
 
 var DebugMode = false
-var PoweroffOnError = true
+var PoweroffOnError = false
 
 func Debug(msg string) {
 	if DebugMode {
@@ -28,6 +28,8 @@ func Assert(err error) {
 			DebugShell()
 		} else if PoweroffOnError {
 			Poweroff()
+		} else {
+			os.Exit(1)
 		}
 	}
 }

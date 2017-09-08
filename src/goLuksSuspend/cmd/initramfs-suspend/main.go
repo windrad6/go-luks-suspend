@@ -12,7 +12,7 @@ func main() {
 	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
 	g.DebugMode = *debugFlag
-	poweroffOnUnlockFailure := *poweroffFlag
+	g.PoweroffOnError = *poweroffFlag
 
 	if flag.NArg() != 1 {
 		g.Assert(errors.New("cryptmounts path unspecified"))
@@ -56,8 +56,7 @@ loop:
 				break loop
 			}
 		}
-		if poweroffOnUnlockFailure {
-			g.PoweroffOnError = true
+		if g.PoweroffOnError {
 			g.Assert(err)
 		}
 	}

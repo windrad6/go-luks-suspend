@@ -33,7 +33,7 @@ func main() {
 	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
 	flag.Parse()
 	g.DebugMode = *debugFlag
-	poweroffOnUnlockFailure := *poweroffFlag
+	g.PoweroffOnError = *poweroffFlag
 
 	g.Debug("gathering cryptdevices")
 	cryptdevs, err := getcryptdevices()
@@ -102,7 +102,7 @@ func main() {
 	}()
 
 	g.Debug("calling suspend in initramfs chroot")
-	g.Assert(runInInitramfsChroot(suspendCmdline(g.DebugMode, poweroffOnUnlockFailure)))
+	g.Assert(runInInitramfsChroot(suspendCmdline(g.DebugMode, g.PoweroffOnError)))
 
 	defer func() {
 		g.Debug("resuming cryptdevices with keyfiles")
