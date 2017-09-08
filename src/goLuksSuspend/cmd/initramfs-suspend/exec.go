@@ -84,7 +84,12 @@ func resumeRootCryptDevice(rootdev string) error {
 		return luksResume(rootdev, os.Stdin)
 	}
 
-	fmt.Printf("\nPress Escape to suspend to RAM.\n\nEnter passphrase for %s: ", rootdev)
+	if g.DebugMode {
+		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.\n")
+	} else {
+		fmt.Println("\nPress Escape to suspend to RAM.\n")
+	}
+	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
 
 	// The `secure` parameter to editreader.New zeroes memory aggressively
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {
