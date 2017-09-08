@@ -28,6 +28,17 @@ func main() {
 	// Crypt keys have been purged, so be less paranoid
 	g.PoweroffOnError = false
 
+	// Shorten task freeze timeout
+	oldtimeout, err := g.SetFreezeTimeout([]byte{'1', '0', '0', '0'})
+	if err == nil {
+		defer func() {
+			_, err := g.SetFreezeTimeout(oldtimeout)
+			g.Assert(err)
+		}()
+	} else {
+		g.Assert(err)
+	}
+
 	if g.DebugMode {
 		g.Debug("debug: skipping suspend to RAM")
 	} else {

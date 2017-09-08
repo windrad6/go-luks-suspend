@@ -48,6 +48,16 @@ func DebugShell() {
 	fmt.Println("EXIT DEBUG SHELL")
 }
 
+const freezeTimeoutPath = "/sys/power/pm_freeze_timeout"
+
+func SetFreezeTimeout(timeout []byte) (oldtimeout []byte, err error) {
+	oldtimeout, err = ioutil.ReadFile(freezeTimeoutPath)
+	if err != nil {
+		return nil, err
+	}
+	return oldtimeout, ioutil.WriteFile(freezeTimeoutPath, timeout, 0644)
+}
+
 func SuspendToRAM() error {
 	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
 }
