@@ -19,4 +19,4 @@ Alias=systemd-suspend.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/openvt -ws /usr/lib/go-luks-suspend/go-luks-suspend
+ExecStart=/usr/bin/openvt -ws -- /usr/lib/go-luks-suspend/go-luks-suspend
