@@ -158,7 +158,9 @@ func suspendCmdline(debug, poweroff bool) []string {
 }
 
 func runInInitramfsChroot(cmdline []string) error {
-	cmd := exec.Command("/usr/bin/chroot", append([]string{initramfsDir}, cmdline...)...)
+	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Chroot: initramfsDir}
+	cmd.Dir = "/"
 	cmd.Env = []string{}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
