@@ -24,8 +24,10 @@ func warn(msg string) {
 func assert(err error) {
 	if err != nil {
 		warn(err.Error())
-		if poweroffOnError {
-			goLuksSuspend.Poweroff(debugMode)
+		if debugMode {
+			goLuksSuspend.DebugShell()
+		} else if poweroffOnError {
+			goLuksSuspend.Poweroff()
 		}
 	}
 }
