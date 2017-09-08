@@ -65,6 +65,34 @@ concurrently on wake after the user successfully unlocks the root volume with
 a passphrase.
 
 
+Poweroff on error
+-----------------
+
+`go-luks-suspend` can power off the machine on error and when the user fails
+to unlock the root volume on wake. This behavior can be enabled by adding the
+`-poweroff` flag to the `ExecStart` line in the service file:
+
+```ini
+# /etc/systemd/system/systemd-suspend.service
+…
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/openvt -ws /usr/lib/go-luks-suspend/go-luks-suspend -poweroff
+```
+
+
+Debug mode
+----------
+
+Running `go-luks-suspend` in debug mode prints debugging messages and spawns a
+rescue shell on error.
+
+```
+# /usr/lib/go-luks-suspend/go-luks-suspend -debug
+```
+
+
 Authors and license
 -------------------
 
