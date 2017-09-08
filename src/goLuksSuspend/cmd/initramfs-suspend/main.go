@@ -28,8 +28,12 @@ func main() {
 	// Crypt keys have been purged, so be less paranoid
 	g.PoweroffOnError = false
 
-	g.Debug("suspending system to RAM")
-	g.Assert(g.SuspendToRAM())
+	if g.DebugMode {
+		g.Debug("debug: skipping suspend to RAM")
+	} else {
+		g.Debug("suspending system to RAM")
+		g.Assert(g.SuspendToRAM())
+	}
 
 loop:
 	for {

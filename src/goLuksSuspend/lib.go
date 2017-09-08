@@ -55,10 +55,6 @@ func DebugShell() (ok bool) {
 }
 
 func SuspendToRAM() error {
-	if DebugMode {
-		Debug("debug: skipping suspend to RAM")
-		return nil
-	}
 	return ioutil.WriteFile("/sys/power/state", []byte{'m', 'e', 'm'}, 0600)
 }
 
