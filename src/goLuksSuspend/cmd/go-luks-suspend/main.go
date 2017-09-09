@@ -105,5 +105,5 @@ func main() {
 	}()
 
 	// User has unlocked the root device, so let's be less paranoid
-	g.PoweroffOnError = false
+	g.IgnoreErrors = true
 }

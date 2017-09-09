@@ -22,7 +22,7 @@ func main() {
 	suspendCryptDevicesOrPoweroff(cryptnames)
 
 	// Crypt keys have been purged, so be less paranoid
-	g.PoweroffOnError = false
+	g.IgnoreErrors = true
 
 	// Shorten task freeze timeout
 	oldtimeout, err := g.SetFreezeTimeout([]byte{'1', '0', '0', '0'})
@@ -52,7 +52,10 @@ loop:
 				break loop
 			}
 		}
+		// The -poweroff flag indicates the user's desire to take the
+		// system offline on failure to unlock.
 		if g.PoweroffOnError {
+			g.IgnoreErrors = false
 			g.Assert(err)
 		}
 	}

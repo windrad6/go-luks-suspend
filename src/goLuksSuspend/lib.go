@@ -11,10 +11,11 @@ import (
 
 var DebugMode = false
 var PoweroffOnError = false
+var IgnoreErrors = false
 
 func ParseFlags() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
-	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
+	poweroffFlag := flag.Bool("poweroff", false, "power off on errors and failure to unlock root device")
 	flag.Parse()
 	DebugMode = *debugFlag
 	PoweroffOnError = *poweroffFlag
@@ -31,15 +32,22 @@ func Warn(msg string) {
 }
 
 func Assert(err error) {
-	if err != nil {
-		Warn(err.Error())
-		if DebugMode {
-			DebugShell()
-		} else if PoweroffOnError {
-			Poweroff()
-		} else {
-			os.Exit(1)
-		}
+	if err == nil {
+		return
+	}
+
+	Warn(err.Error())
+
+	if IgnoreErrors {
+		return
+	}
+
+	if DebugMode {
+		DebugShell()
+	} else if PoweroffOnError {
+		Poweroff()
+	} else {
+		os.Exit(1)
 	}
 }
 
