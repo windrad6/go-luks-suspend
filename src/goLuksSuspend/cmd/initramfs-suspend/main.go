@@ -8,11 +8,7 @@ import (
 )
 
 func main() {
-	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
-	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
-	flag.Parse()
-	g.DebugMode = *debugFlag
-	g.PoweroffOnError = *poweroffFlag
+	g.ParseFlags()
 
 	if flag.NArg() != 1 {
 		g.Assert(errors.New("cryptmounts path unspecified"))

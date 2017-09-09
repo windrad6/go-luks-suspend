@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,11 +28,7 @@ const initramfsDir = "/run/initramfs"
 const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
 
 func main() {
-	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
-	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
-	flag.Parse()
-	g.DebugMode = *debugFlag
-	g.PoweroffOnError = *poweroffFlag
+	g.ParseFlags()
 
 	g.Debug("gathering cryptdevices")
 	cryptdevs, err := getcryptdevices()

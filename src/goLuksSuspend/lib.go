@@ -1,6 +1,7 @@
 package goLuksSuspend
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,14 @@ import (
 
 var DebugMode = false
 var PoweroffOnError = false
+
+func ParseFlags() {
+	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
+	poweroffFlag := flag.Bool("poweroff", false, "power off on failure to unlock root device")
+	flag.Parse()
+	DebugMode = *debugFlag
+	PoweroffOnError = *poweroffFlag
+}
 
 func Debug(msg string) {
 	if DebugMode {
