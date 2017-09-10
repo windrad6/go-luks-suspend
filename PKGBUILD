@@ -1,7 +1,7 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
 pkgname=go-luks-suspend
-pkgver=1.3.4
+pkgver=1.3.5
 pkgrel=1
 pkgdesc='Encrypt LUKS volumes on system suspend'
 arch=('x86_64')
