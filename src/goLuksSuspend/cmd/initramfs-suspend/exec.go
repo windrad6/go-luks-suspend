@@ -85,9 +85,9 @@ func resumeRootCryptDevice(rootdev string) error {
 	}
 
 	if g.DebugMode {
-		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.\n")
+		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.")
 	} else {
-		fmt.Println("\nPress Escape to suspend to RAM.\n")
+		fmt.Println("\nPress Escape to suspend to RAM.")
 	}
 	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
 
