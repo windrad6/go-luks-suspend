@@ -132,13 +132,9 @@ func stopSystemServices(services []string) (stoppedServices []string, err error)
 		}
 	}
 
-	for _, s := range stoppedServices {
-		if exec.Command(systemctlPath, "stop", s).Run() != nil {
-			return stoppedServices, err
-		}
-	}
+	args := append([]string{"stop"}, stoppedServices...)
 
-	return stoppedServices, nil
+	return stoppedServices, exec.Command(systemctlPath, args...).Run()
 }
 
 func startSystemServices(services []string) error {
