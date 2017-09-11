@@ -11,16 +11,9 @@
 		{
 			"importpath": "github.com/guns/golibs/sys",
 			"repository": "https://github.com/guns/golibs",
-			"revision": "db143b51decde2634b118ed45645dcc7237f1f9f",
-			"branch": "master",
+			"revision": "f57fbcc39d634834a38b1bb304a5445e802808cd",
+			"branch": "linux",
 			"path": "/sys"
-		},
-		{
-			"importpath": "golang.org/x/sys/unix",
-			"repository": "https://go.googlesource.com/sys",
-			"revision": "a5054c7c1385fd50d9394475365355a87a7873ec",
-			"branch": "master",
-			"path": "/unix"
 		}
 	]
 }

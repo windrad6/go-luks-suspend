@@ -2,25 +2,24 @@
 // Distributed under the MIT license.
 // http://www.opensource.org/licenses/mit-license.php
 
-// +build !windows
+// +build linux
 
 package sys
 
 import (
 	"syscall"
 	"unsafe"
-
-	"golang.org/x/sys/unix"
 )
 
 // SetTTYIoctl identifies the three tcsetattr ioctls described in ioctl_tty(2)
 type SetTTYIoctl uintptr
 
 // These are typed for compile time safety.
+// /usr/include/asm-generic/ioctls.h:
 const (
-	TCSETS  SetTTYIoctl = unix.TCSETS
-	TCSETSW             = unix.TCSETSW
-	TCSETSF             = unix.TCSETSF
+	TCSETS  SetTTYIoctl = 0x5402
+	TCSETSW             = 0x5403
+	TCSETSF             = 0x5404
 )
 
 // GetTTYState writes the TTY state of fd to termios.
