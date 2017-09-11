@@ -9,6 +9,13 @@
 			"path": "/editreader"
 		},
 		{
+			"importpath": "github.com/guns/golibs/errjoin",
+			"repository": "https://github.com/guns/golibs",
+			"revision": "db143b51decde2634b118ed45645dcc7237f1f9f",
+			"branch": "master",
+			"path": "/errjoin"
+		},
+		{
 			"importpath": "github.com/guns/golibs/sys",
 			"repository": "https://github.com/guns/golibs",
 			"revision": "f57fbcc39d634834a38b1bb304a5445e802808cd",

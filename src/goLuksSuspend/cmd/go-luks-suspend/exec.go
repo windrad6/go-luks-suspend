@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,6 +11,8 @@ import (
 	"syscall"
 
 	g "goLuksSuspend"
+
+	"github.com/guns/golibs/errjoin"
 )
 
 func checkRootOwnedAndExecutablePath(path string) error {
@@ -68,6 +71,16 @@ func bindInitramfs() error {
 
 const systemSleepDir = "/usr/lib/systemd/system-sleep"
 
+// systemd-suspend.service(8):
+// Immediately before entering system suspend and/or hibernation
+// systemd-suspend.service (and the other mentioned units, respectively)
+// will run all executables in /usr/lib/systemd/system-sleep/ and pass two
+// arguments to them. The first argument will be "pre", the second either
+// "suspend", "hibernate", or "hybrid-sleep" depending on the chosen action.
+// Immediately after leaving system suspend and/or hibernation the same
+// executables are run, but the first argument is now "post". All executables
+// in this directory are executed in parallel, and execution of the action is
+// not continued until all executables have finished.
 func runSystemSuspendScripts(scriptarg string) error {
 	dir, err := os.Open(systemSleepDir)
 	if err != nil {
@@ -83,19 +96,29 @@ func runSystemSuspendScripts(scriptarg string) error {
 		return err
 	}
 
+	errslice := make([]error, len(fs))
+	wg := sync.WaitGroup{}
+
 	for i := range fs {
 		if err := checkRootOwnedAndExecutable(fs[i]); err != nil {
 			g.Warn(err.Error())
 			continue
 		}
 
-		err := exec.Command(filepath.Join(systemSleepDir, fs[i].Name()), scriptarg, "suspend").Run()
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(i int) {
+			script := filepath.Join(systemSleepDir, fs[i].Name())
+			err := exec.Command(script, scriptarg, "suspend").Run()
+			if err != nil {
+				errslice[i] = errors.New(script + ": " + err.Error())
+			}
+			wg.Done()
+		}(i)
 	}
 
-	return nil
+	wg.Wait()
+
+	return errjoin.Join(" • ", errslice...)
 }
 
 var systemctlPath = "/usr/bin/systemctl"
