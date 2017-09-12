@@ -1,7 +1,7 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
 pkgname=go-luks-suspend
-pkgver=1.3.8
+pkgver=1.3.9
 pkgrel=1
 pkgdesc='Encrypt LUKS volumes on system suspend'
 arch=('x86_64')
@@ -11,7 +11,6 @@ depends=('systemd' 'cryptsetup' 'mkinitcpio')
 makedepends=('go')
 install=install
 conflicts=('arch-luks-suspend' 'arch-luks-suspend-git')
-replaces=('arch-luks-suspend' 'arch-luks-suspend-git')
 
 package() {
   cd "$startdir"
