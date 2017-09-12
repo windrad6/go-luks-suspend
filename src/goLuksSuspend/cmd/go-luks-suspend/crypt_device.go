@@ -25,6 +25,8 @@ func getcryptdevices() ([]cryptdevice, error) {
 	cryptdevs, err := cryptdevicesFromSysfs()
 	if err != nil {
 		return nil, err
+	} else if len(cryptdevs) == 0 {
+		return nil, nil
 	}
 
 	cdmap := make(map[string]*cryptdevice, len(cryptdevs))

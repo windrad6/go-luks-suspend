@@ -37,6 +37,24 @@ func main() {
 		g.Debug(fmt.Sprintf("%#v", cryptdevs))
 	}
 
+	if len(cryptdevs) == 0 {
+		g.IgnoreErrors = true
+	}
+
+	g.Debug("running pre-suspend scripts")
+	g.Assert(runSystemSuspendScripts("pre"))
+
+	defer func() {
+		g.Debug("running post-suspend scripts")
+		g.Assert(runSystemSuspendScripts("post"))
+	}()
+
+	if len(cryptdevs) == 0 {
+		g.Debug("no cryptdevices found, doing normal suspend")
+		g.SuspendToRAM()
+		return
+	}
+
 	g.Debug("gathering filesystems with write barriers")
 	filesystems, err := getFilesystemsWithWriteBarriers()
 	g.Assert(err)
@@ -53,14 +71,6 @@ func main() {
 	defer func() {
 		g.Debug("unmounting initramfs bind mounts")
 		g.Assert(unbindInitramfs())
-	}()
-
-	g.Debug("running pre-suspend scripts")
-	g.Assert(runSystemSuspendScripts("pre"))
-
-	defer func() {
-		g.Debug("running post-suspend scripts")
-		g.Assert(runSystemSuspendScripts("post"))
 	}()
 
 	g.Debug("stopping selected system services")
