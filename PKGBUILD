@@ -1,14 +1,14 @@
 # Maintainer: guns <self@sungpae.com>
 # Contributor: Vianney le Clément de Saint-Marcq <vleclement AT gmail·com>
 pkgname=go-luks-suspend
-pkgver=1.3.7
+pkgver=1.3.8
 pkgrel=1
 pkgdesc='Encrypt LUKS volumes on system suspend'
 arch=('x86_64')
-url="https://github.com/guns/go-luks-suspend"
+url='https://github.com/guns/go-luks-suspend'
 license=('GPL3')
 depends=('systemd' 'cryptsetup' 'mkinitcpio')
-makedepends=('go' 'git')
+makedepends=('go')
 install=install
 conflicts=('arch-luks-suspend' 'arch-luks-suspend-git')
 replaces=('arch-luks-suspend' 'arch-luks-suspend-git')
