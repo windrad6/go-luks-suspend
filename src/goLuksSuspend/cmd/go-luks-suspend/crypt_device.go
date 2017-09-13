@@ -22,21 +22,49 @@ type cryptdevice struct {
 }
 
 func getcryptdevices() ([]cryptdevice, error) {
-	cryptdevs, err := cryptdevicesFromSysfs()
+	dirs, err := filepath.Glob("/sys/block/*/dm")
 	if err != nil {
 		return nil, err
-	} else if len(cryptdevs) == 0 {
+	} else if len(dirs) == 0 {
 		return nil, nil
 	}
 
-	cdmap := make(map[string]*cryptdevice, len(cryptdevs))
-
-	for i := range cryptdevs {
-		cdmap[cryptdevs[i].name] = &cryptdevs[i]
+	rootdev, err := getCryptdeviceFromKernelCmdline("/proc/cmdline")
+	if err != nil {
+		return nil, err
 	}
 
-	if err := addKeyfilesFromCrypttab(cdmap); err != nil {
-		return nil, err
+	cryptdevs := make([]cryptdevice, 0, len(dirs))
+
+	for i := range dirs {
+		// Skip if not a LUKS device
+		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
+		if err != nil {
+			return nil, err
+		} else if string(uuid[:12]) != "CRYPT-LUKS1-" {
+			continue
+		}
+
+		cd := cryptdevice{
+			dmdir: dirs[i],
+			uuid:  string(bytes.TrimSpace(uuid)),
+		}
+
+		// Skip if suspended
+		if cd.suspended() {
+			continue
+		}
+
+		name, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "name"))
+		if err != nil {
+			return nil, err
+		}
+
+		cd.name = string(bytes.TrimSpace(name))
+		if cd.name == rootdev {
+			cd.isRootDevice = true
+		}
+		cryptdevs = append(cryptdevs, cd)
 	}
 
 	return cryptdevs, nil
@@ -116,58 +144,15 @@ func getCryptdeviceFromKernelCmdline(path string) (string, error) {
 	return "", nil
 }
 
-func cryptdevicesFromSysfs() ([]cryptdevice, error) {
-	dirs, err := filepath.Glob("/sys/block/*/dm")
-	if err != nil {
-		return nil, err
-	} else if len(dirs) == 0 {
-		return nil, nil
-	}
-
-	rootdev, err := getCryptdeviceFromKernelCmdline("/proc/cmdline")
-	if err != nil {
-		return nil, err
-	}
-
-	cryptdevs := make([]cryptdevice, 0, len(dirs))
-
-	for i := range dirs {
-		// Skip if not a LUKS device
-		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
-		if err != nil {
-			return nil, err
-		} else if string(uuid[:12]) != "CRYPT-LUKS1-" {
-			continue
-		}
-
-		cd := cryptdevice{
-			dmdir: dirs[i],
-			uuid:  string(bytes.TrimSpace(uuid)),
-		}
-
-		// Skip if suspended
-		if cd.suspended() {
-			continue
-		}
-
-		name, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "name"))
-		if err != nil {
-			return nil, err
-		}
-
-		cd.name = string(bytes.TrimSpace(name))
-		if cd.name == rootdev {
-			cd.isRootDevice = true
-		}
-		cryptdevs = append(cryptdevs, cd)
-	}
-
-	return cryptdevs, nil
-}
-
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
 
-func addKeyfilesFromCrypttab(cdmap map[string]*cryptdevice) error {
+func addKeyfilesFromCrypttab(cryptdevs []cryptdevice) error {
+	cdmap := make(map[string]*cryptdevice, len(cryptdevs))
+
+	for i := range cryptdevs {
+		cdmap[cryptdevs[i].name] = &cryptdevs[i]
+	}
+
 	file, err := os.Open("/etc/crypttab")
 	if err != nil {
 		return err

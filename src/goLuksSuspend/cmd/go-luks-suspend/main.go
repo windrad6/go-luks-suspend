@@ -116,4 +116,7 @@ func main() {
 
 	// User has unlocked the root device, so let's be less paranoid
 	g.IgnoreErrors = true
+
+	// Safe to grab keyfile info after root device is unlocked
+	addKeyfilesFromCrypttab(cryptdevs)
 }
