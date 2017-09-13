@@ -54,7 +54,7 @@ func (cd *cryptdevice) exists() bool {
 
 func (cd *cryptdevice) suspended() bool {
 	buf, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "suspended"))
-	if err != nil {
+	if err != nil || len(buf) == 0 {
 		// Ignore the error here for a cleaner API; read errors imply
 		// that the device is gone, so technically, it's not suspended
 		return false
