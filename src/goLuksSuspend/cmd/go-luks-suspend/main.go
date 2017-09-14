@@ -51,7 +51,7 @@ func main() {
 
 	if len(cryptdevs) == 0 {
 		g.Debug("no cryptdevices found, doing normal suspend")
-		g.SuspendToRAM()
+		g.Assert(g.SuspendToRAM())
 		return
 	}
 
@@ -118,5 +118,5 @@ func main() {
 	g.IgnoreErrors = true
 
 	// Safe to grab keyfile info after root device is unlocked
-	addKeyfilesFromCrypttab(cryptdevs)
+	g.Assert(addKeyfilesFromCrypttab(cryptdevs))
 }
