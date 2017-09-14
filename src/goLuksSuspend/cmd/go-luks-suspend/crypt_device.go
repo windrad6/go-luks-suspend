@@ -142,15 +142,17 @@ func getCryptdeviceFromKernelCmdline(path string) (string, error) {
 
 	// Grab the last instance in case of duplicates
 	for i := len(params) - 1; i >= 0; i-- {
-		p := params[i]
-		if len(p) > 12 && p[:12] == "cryptdevice=" {
-			fields := strings.SplitN(p, ":", 3)
-			if len(fields) < 2 {
-				return "", errors.New("malformed cryptdevice= kernel parameter")
-			}
-
-			return fields[1], nil
+		kv := strings.SplitN(params[i], "=", 2)
+		if len(kv) < 2 || kv[0] != "cryptdevice" {
+			continue
 		}
+
+		fields := strings.SplitN(kv[1], ":", 3)
+		if len(fields) < 2 {
+			continue
+		}
+
+		return fields[1], nil
 	}
 
 	return "", nil
