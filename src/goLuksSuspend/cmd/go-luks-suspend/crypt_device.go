@@ -147,6 +147,7 @@ func getCryptdeviceFromKernelCmdline(path string) (string, error) {
 			continue
 		}
 
+		// cryptdevice=device:dmname:options
 		fields := strings.SplitN(kv[1], ":", 3)
 		if len(fields) < 2 {
 			continue
