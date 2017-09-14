@@ -19,7 +19,7 @@ func main() {
 	g.Assert(err)
 
 	g.Debug("suspending cryptdevices")
-	suspendCryptDevices(cryptnames)
+	g.Assert(suspendCryptDevices(cryptnames))
 
 	// Crypt keys have been purged, so be less paranoid
 	g.IgnoreErrors = true
