@@ -118,5 +118,9 @@ func main() {
 	g.IgnoreErrors = true
 
 	// Safe to grab keyfile info after root device is unlocked
+	g.Debug("gathering keyfiles from /etc/crypttab")
 	g.Assert(addKeyfilesFromCrypttab(cryptdevs))
+	if g.DebugMode {
+		g.Debug(fmt.Sprintf("%#v", cryptdevs))
+	}
 }

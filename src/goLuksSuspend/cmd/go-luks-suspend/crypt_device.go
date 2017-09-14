@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ type cryptdevice struct {
 	name         string
 	uuid         string
 	dmdir        string
-	keyfile      string
+	keyfile      keyfile
 	isRootDevice bool
 }
 
@@ -92,7 +93,18 @@ func (cd *cryptdevice) suspended() bool {
 }
 
 func (cd *cryptdevice) resumeWithKeyfile() error {
-	return exec.Command("/usr/bin/cryptsetup", "--key-file", cd.keyfile, "luksResume", cd.name).Run()
+	args := make([]string, 0, 8)
+
+	args = append(args, "--key-file", cd.keyfile.path)
+	if cd.keyfile.offset > 0 {
+		args = append(args, "--keyfile-offset", strconv.Itoa(cd.keyfile.offset))
+	}
+	if cd.keyfile.size > 0 {
+		args = append(args, "--keyfile-size", strconv.Itoa(cd.keyfile.size))
+	}
+	args = append(args, "luksResume", cd.name)
+
+	return exec.Command("/usr/bin/cryptsetup", args...).Run()
 }
 
 func dumpCryptdevices(path string, cryptdevs []cryptdevice) error {
@@ -166,10 +178,13 @@ func addKeyfilesFromCrypttab(cryptdevs []cryptdevice) error {
 			continue
 		}
 
-		fields := bytes.Fields(line)
+		name, key := parseKeyfileFromCrypttabEntry(string(line))
+		if len(name) == 0 {
+			continue
+		}
 
-		if cd, ok := cdmap[string(fields[0])]; ok {
-			cd.keyfile = string(fields[2])
+		if cd, ok := cdmap[name]; ok {
+			cd.keyfile = key
 		}
 	}
 

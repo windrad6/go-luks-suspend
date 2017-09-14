@@ -212,7 +212,7 @@ func resumeDevicesWithKeyfiles(cryptdevs []cryptdevice) {
 				} else if !cd.exists() {
 					g.Warn("[WARNING] missing cryptdevice " + cd.name)
 					continue
-				} else if len(cd.keyfile) == 0 {
+				} else if !cd.keyfile.exists() {
 					g.Warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.name))
 					continue
 				}
