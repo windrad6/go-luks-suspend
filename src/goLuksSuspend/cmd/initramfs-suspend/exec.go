@@ -6,9 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
-	"sync"
 	"syscall"
 
 	g "goLuksSuspend"
@@ -28,31 +26,14 @@ func loadCryptnames(path string) ([]string, error) {
 }
 
 func suspendCryptDevices(deviceNames []string) {
-	n := runtime.NumCPU()
-	wg := sync.WaitGroup{}
-	ch := make(chan string)
-
-	wg.Add(1)
-	go func() {
-		for i := range deviceNames {
-			ch <- deviceNames[i]
-		}
-		close(ch)
-		wg.Done()
-	}()
-
-	wg.Add(n)
-	for i := 0; i < n; i++ {
-		go func() {
-			for name := range ch {
-				g.Debug("suspending " + name)
-				g.Assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", name).Run())
-			}
-			wg.Done()
-		}()
+	// Iterate backwards so that we suspend the root device last. This prevents
+	// a logical deadlock in which a cryptdevice is actually a file on the root
+	// device. There is no way of solving this problem in the general case
+	// without building a directed graph of cryptdevices -> cryptdevices.
+	for i := len(deviceNames) - 1; i >= 0; i-- {
+		g.Debug("suspending " + deviceNames[i])
+		g.Assert(exec.Command("/usr/bin/cryptsetup", "luksSuspend", deviceNames[i]).Run())
 	}
-
-	wg.Wait()
 }
 
 func luksResume(device string, stdin io.Reader) error {
