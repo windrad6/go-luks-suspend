@@ -27,7 +27,7 @@ func loadCryptnames(path string) ([]string, error) {
 	return strings.Split(string(buf), "\x00"), nil
 }
 
-func suspendCryptDevicesOrPoweroff(deviceNames []string) {
+func suspendCryptDevices(deviceNames []string) {
 	n := runtime.NumCPU()
 	wg := sync.WaitGroup{}
 	ch := make(chan string)
