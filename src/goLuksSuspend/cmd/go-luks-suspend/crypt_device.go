@@ -155,7 +155,7 @@ func getCryptdeviceFromKernelCmdline(path string) (string, error) {
 		return fields[1], nil
 	}
 
-	return "", nil
+	return "", errors.New("no root cryptdevice")
 }
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
