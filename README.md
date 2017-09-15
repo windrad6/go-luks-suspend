@@ -74,26 +74,18 @@ A. The `-poweroff` flag instructs `go-luks-suspend` to power off the machine
 on error or when the user fails to unlock the root volume on wake. To add this
 flag to the `go-luks-suspend` command line:
 
-1. Create an edited copy of the service file:
+1. Override the service file:
 
 ```
-# systemctl edit --full go-luks-suspend.service
+# systemctl edit go-luks-suspend.service
 ```
 
-2. Add the `-poweroff` flag to the ExecStart line:
+2. Redefine the `ExecStart` entry with the `-poweroff` flag:
 
 ```ini
-…
 [Service]
-Type=oneshot
+ExecStart=
 ExecStart=/usr/bin/openvt -ws -- /usr/lib/go-luks-suspend/go-luks-suspend -poweroff
-```
-
-3. Re-enable `go-luks-suspend`:
-
-```
-# systemctl disable go-luks-suspend.service
-# systemctl enable go-luks-suspend.service
 ```
 
 
