@@ -49,6 +49,15 @@ func luksResume(device string, stdin io.Reader) error {
 	return cmd.Run()
 }
 
+func printPassphrasePrompt(rootdev string) {
+	if g.DebugMode {
+		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.")
+	} else {
+		fmt.Println("\nPress Escape to suspend to RAM.")
+	}
+	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
+}
+
 func resumeRootCryptDevice(rootdev string) error {
 	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETSF, func(tty syscall.Termios) syscall.Termios {
 		tty.Lflag &^= syscall.ICANON | syscall.ECHO
@@ -70,12 +79,7 @@ func resumeRootCryptDevice(rootdev string) error {
 		return luksResume(rootdev, os.Stdin)
 	}
 
-	if g.DebugMode {
-		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.")
-	} else {
-		fmt.Println("\nPress Escape to suspend to RAM.")
-	}
-	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
+	printPassphrasePrompt(rootdev)
 
 	// The `secure` parameter to editreader.New zeroes memory aggressively
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {
@@ -88,6 +92,7 @@ func resumeRootCryptDevice(rootdev string) error {
 		case 0x1b: // ^[
 			g.Debug("suspending to RAM")
 			g.Assert(g.SuspendToRAM())
+			printPassphrasePrompt(rootdev)
 			return editreader.Kill
 		case 0x17: // ^W
 			return editreader.Kill
