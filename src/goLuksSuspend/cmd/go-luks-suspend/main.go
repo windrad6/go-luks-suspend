@@ -34,7 +34,9 @@ func main() {
 	cryptdevs, cdmap, err := getcryptdevices()
 	g.Assert(err)
 	if g.DebugMode {
-		g.Debug(fmt.Sprintf("%#v", cryptdevs))
+		for i := range cryptdevs {
+			g.Debug(fmt.Sprintf("%#v", cryptdevs[i]))
+		}
 	}
 
 	if len(cryptdevs) == 0 {
@@ -59,7 +61,9 @@ func main() {
 	filesystems, err := getFilesystemsWithWriteBarriers()
 	g.Assert(err)
 	if g.DebugMode {
-		g.Debug(fmt.Sprintf("%#v", filesystems))
+		for i := range filesystems {
+			g.Debug(fmt.Sprintf("%#v", filesystems[i]))
+		}
 	}
 
 	g.Debug("checking for suspend program in initramfs")
@@ -121,6 +125,10 @@ func main() {
 	g.Debug("gathering keyfiles from /etc/crypttab")
 	g.Assert(addKeyfilesFromCrypttab(cdmap))
 	if g.DebugMode {
-		g.Debug(fmt.Sprintf("%#v", cryptdevs))
+		for i := range cryptdevs {
+			if cryptdevs[i].keyfile.exists() {
+				g.Debug(fmt.Sprintf("%#v", cryptdevs[i].keyfile))
+			}
+		}
 	}
 }
