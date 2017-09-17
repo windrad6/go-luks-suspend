@@ -159,7 +159,7 @@ func enableWriteBarriers(filesystems []filesystem) {
 		}
 		if err := filesystems[i].enableWriteBarrier(); err != nil {
 			g.Warn(fmt.Sprintf(
-				"[WARNING] mount -o remount,barrier %s: %s",
+				"[WARNING] mount %s REMOUNT BARRIER: %s",
 				filesystems[i].mountpoint,
 				err.Error(),
 			))

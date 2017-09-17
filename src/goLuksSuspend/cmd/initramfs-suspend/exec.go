@@ -92,6 +92,7 @@ func resumeRootCryptDevice(rootdev string) error {
 		case 0x1b: // ^[
 			g.Debug("suspending to RAM")
 			g.Assert(g.SuspendToRAM())
+			fmt.Println()
 			printPassphrasePrompt(rootdev)
 			return editreader.Kill
 		case 0x17: // ^W
