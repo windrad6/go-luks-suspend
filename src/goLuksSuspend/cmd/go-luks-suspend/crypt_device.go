@@ -32,7 +32,7 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 		return nil, nil, nil
 	}
 
-	rootdev, err := getCryptdeviceFromKernelCmdline("/proc/cmdline")
+	rootdev, rootkey, err := getLUKSParamsFromKernelCmdline()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,6 +67,7 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 		cd.name = string(bytes.TrimSpace(name))
 		if cd.name == rootdev {
 			cd.isRootDevice = true
+			cd.keyfile = rootkey
 		}
 		cryptdevs = append(cryptdevs, cd)
 
@@ -140,31 +141,70 @@ func dumpCryptdevices(path string, cryptdevs []cryptdevice) error {
 	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
 }
 
-func getCryptdeviceFromKernelCmdline(path string) (string, error) {
-	buf, err := ioutil.ReadFile(path)
+var kernelCmdline = "/proc/cmdline"
+
+func getLUKSParamsFromKernelCmdline() (rootdev string, key keyfile, err error) {
+	buf, err := ioutil.ReadFile(kernelCmdline)
 	if err != nil {
-		return "", err
+		return "", keyfile{}, err
 	}
+
+	//
+	// https://git.archlinux.org/svntogit/packages.git/tree/trunk/encrypt_hook?h=packages/cryptsetup
+	//
 
 	params := strings.Fields(string(buf))
+	key.path = "/crypto_keyfile.bin"
 
-	// Grab the last instance in case of duplicates
-	for i := len(params) - 1; i >= 0; i-- {
+	for i := range params {
 		kv := strings.SplitN(params[i], "=", 2)
-		if len(kv) < 2 || kv[0] != "cryptdevice" {
+		if len(kv) < 2 {
 			continue
-		}
+		} else if kv[0] == "cryptdevice" {
+			// cryptdevice=device:dmname:options
+			fields := strings.SplitN(kv[1], ":", 3)
+			if len(fields) < 2 {
+				continue
+			}
 
-		// cryptdevice=device:dmname:options
-		fields := strings.SplitN(kv[1], ":", 3)
-		if len(fields) < 2 {
-			continue
-		}
+			rootdev = fields[1]
+		} else if kv[0] == "cryptkey" {
+			fields := strings.SplitN(kv[1], ":", 3)
+			if len(fields) < 2 {
+				continue
+			}
 
-		return fields[1], nil
+			// cryptkey=rootfs:path
+			if len(fields) == 2 && fields[0] == "rootfs" {
+				key.path = fields[1]
+				continue
+			}
+
+			if len(fields) < 3 {
+				continue
+			}
+
+			if offset, err := strconv.Atoi(fields[1]); err == nil {
+				// cryptkey=device:offset:size
+				size, err := strconv.Atoi(fields[2])
+				if err != nil {
+					continue // ignore malformed entry
+				}
+				key.path = fields[0]
+				key.offset = offset
+				key.size = size
+				continue
+			}
+
+			// cryptkey=device:filesystem:path
+		}
 	}
 
-	return "", errors.New("no root cryptdevice")
+	if len(rootdev) == 0 {
+		return "", keyfile{}, errors.New("no root cryptdevice")
+	}
+
+	return rootdev, key, nil
 }
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
