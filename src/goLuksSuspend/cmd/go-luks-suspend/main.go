@@ -31,7 +31,7 @@ func main() {
 	g.ParseFlags()
 
 	g.Debug("gathering cryptdevices")
-	cryptdevs, err := getcryptdevices()
+	cryptdevs, cdmap, err := getcryptdevices()
 	g.Assert(err)
 	if g.DebugMode {
 		g.Debug(fmt.Sprintf("%#v", cryptdevs))
@@ -119,7 +119,7 @@ func main() {
 
 	// Safe to grab keyfile info after root device is unlocked
 	g.Debug("gathering keyfiles from /etc/crypttab")
-	g.Assert(addKeyfilesFromCrypttab(cryptdevs))
+	g.Assert(addKeyfilesFromCrypttab(cdmap))
 	if g.DebugMode {
 		g.Debug(fmt.Sprintf("%#v", cryptdevs))
 	}

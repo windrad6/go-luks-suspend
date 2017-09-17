@@ -22,26 +22,27 @@ type cryptdevice struct {
 	isRootDevice bool
 }
 
-func getcryptdevices() ([]cryptdevice, error) {
+func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if len(dirs) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	rootdev, err := getCryptdeviceFromKernelCmdline("/proc/cmdline")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	cryptdevs := make([]cryptdevice, 0, len(dirs))
+	cdmap := make(map[string]*cryptdevice, len(dirs))
 
 	for i := range dirs {
 		// Skip if not a LUKS device
 		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		} else if string(uuid[:12]) != "CRYPT-LUKS1-" {
 			continue
 		}
@@ -58,7 +59,7 @@ func getcryptdevices() ([]cryptdevice, error) {
 
 		name, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "name"))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		cd.name = string(bytes.TrimSpace(name))
@@ -66,9 +67,14 @@ func getcryptdevices() ([]cryptdevice, error) {
 			cd.isRootDevice = true
 		}
 		cryptdevs = append(cryptdevs, cd)
+
+		if v, ok := cdmap[cd.name]; ok {
+			return nil, nil, fmt.Errorf("duplicate cryptdevice: %#v", v)
+		}
+		cdmap[cd.name] = &cryptdevs[len(cryptdevs)-1]
 	}
 
-	return cryptdevs, nil
+	return cryptdevs, cdmap, nil
 }
 
 func (cd *cryptdevice) exists() bool {
@@ -161,13 +167,7 @@ func getCryptdeviceFromKernelCmdline(path string) (string, error) {
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
 
-func addKeyfilesFromCrypttab(cryptdevs []cryptdevice) error {
-	cdmap := make(map[string]*cryptdevice, len(cryptdevs))
-
-	for i := range cryptdevs {
-		cdmap[cryptdevs[i].name] = &cryptdevs[i]
-	}
-
+func addKeyfilesFromCrypttab(cdmap map[string]*cryptdevice) error {
 	file, err := os.Open("/etc/crypttab")
 	if err != nil {
 		return err
