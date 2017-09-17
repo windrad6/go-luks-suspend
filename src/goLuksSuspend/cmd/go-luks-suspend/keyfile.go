@@ -15,7 +15,12 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key keyfile) {
 	fields := strings.Fields(line)
 
 	// fields: name, device, keyfile, options
-	if len(fields) < 3 {
+	//
+	// crypttab(5):
+	// The third field specifies the encryption password. If the field is
+	// not present or the password is set to "none" or "-", the password
+	// has to be manually entered during system boot.
+	if len(fields) < 3 || fields[2] == "-" || fields[2] == "none" {
 		return "", keyfile{}
 	}
 
