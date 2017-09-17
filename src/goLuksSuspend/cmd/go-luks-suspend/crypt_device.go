@@ -16,11 +16,13 @@ import (
 
 type cryptdevice struct {
 	name         string
-	uuid         string
+	uuid         []byte
 	dmdir        string
 	keyfile      keyfile
 	isRootDevice bool
 }
+
+var luksUUIDPrefix = []byte("CRYPT-LUKS1-")
 
 func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
@@ -43,13 +45,13 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
 		if err != nil {
 			return nil, nil, err
-		} else if string(uuid[:12]) != "CRYPT-LUKS1-" {
+		} else if !bytes.Equal(uuid[:len(luksUUIDPrefix)], luksUUIDPrefix) {
 			continue
 		}
 
 		cd := cryptdevice{
 			dmdir: dirs[i],
-			uuid:  string(bytes.TrimSpace(uuid)),
+			uuid:  bytes.TrimSuffix(uuid, []byte{'\n'}),
 		}
 
 		// Skip if suspended
@@ -84,7 +86,7 @@ func (cd *cryptdevice) exists() bool {
 		return false
 	}
 
-	return cd.uuid == string(bytes.TrimSpace(uuid))
+	return bytes.Equal(cd.uuid, bytes.TrimSuffix(uuid, []byte{'\n'}))
 }
 
 func (cd *cryptdevice) suspended() bool {

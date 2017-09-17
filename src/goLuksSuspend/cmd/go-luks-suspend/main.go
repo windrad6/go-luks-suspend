@@ -35,7 +35,11 @@ func main() {
 	g.Assert(err)
 	if g.DebugMode {
 		for i := range cryptdevs {
-			g.Debug(fmt.Sprintf("%#v", cryptdevs[i]))
+			g.Debug(fmt.Sprintf("name:%#v uuid:%#v isRootDevice:%#v",
+				cryptdevs[i].name,
+				string(cryptdevs[i].uuid),
+				cryptdevs[i].isRootDevice,
+			))
 		}
 	}
 
