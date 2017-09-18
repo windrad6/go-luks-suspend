@@ -67,6 +67,10 @@ func DebugShell() {
 	fmt.Println("EXIT DEBUG SHELL")
 }
 
+func Systemctl(args ...string) error {
+	return exec.Command("/usr/bin/systemctl", args...).Run()
+}
+
 const freezeTimeoutPath = "/sys/power/pm_freeze_timeout"
 
 func SetFreezeTimeout(timeout []byte) (oldtimeout []byte, err error) {

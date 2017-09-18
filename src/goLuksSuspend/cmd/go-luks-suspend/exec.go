@@ -124,24 +124,22 @@ func runSystemSuspendScripts(scriptarg string) error {
 	return errjoin.Join(" • ", errslice...)
 }
 
-var systemctlPath = "/usr/bin/systemctl"
-
 func stopSystemServices(services []string) (stoppedServices []string, err error) {
 	// Stopping one service may deactivate another so it is necessary to
 	// record which services are active first
 	for _, s := range services {
-		if exec.Command(systemctlPath, "--quiet", "is-active", s).Run() == nil {
+		if g.Systemctl("--quiet", "is-active", s) == nil {
 			stoppedServices = append(stoppedServices, s)
 		}
 	}
 
 	args := append([]string{"stop"}, stoppedServices...)
 
-	return stoppedServices, exec.Command(systemctlPath, args...).Run()
+	return stoppedServices, g.Systemctl(args...)
 }
 
 func startSystemServices(services []string) error {
-	return exec.Command(systemctlPath, append([]string{"start"}, services...)...).Run()
+	return g.Systemctl(append([]string{"start"}, services...)...)
 }
 
 func disableWriteBarriers(filesystems []filesystem) error {
