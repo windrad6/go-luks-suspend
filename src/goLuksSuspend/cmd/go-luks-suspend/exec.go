@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -178,6 +180,31 @@ func suspendCmdline(debug, poweroff bool) []string {
 	return append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
 }
 
+func dumpCryptdevices(path string, cryptdevs []g.Cryptdevice) error {
+	buf := make([][]byte, len(cryptdevs))
+	j := 1
+
+	for i := range cryptdevs {
+		if cryptdevs[i].IsRootDevice {
+			if len(buf[0]) > 0 {
+				return fmt.Errorf(
+					"multiple root cryptdevices: %s, %s",
+					string(buf[0]),
+					cryptdevs[i].Name,
+				)
+			}
+			buf[0] = []byte(cryptdevs[i].Name)
+		} else if j >= len(buf) {
+			return errors.New("no root cryptdevice")
+		} else {
+			buf[j] = []byte(cryptdevs[i].Name)
+			j++
+		}
+	}
+
+	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
+}
+
 func runInInitramfsChroot(cmdline []string) error {
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Chroot: initramfsDir}
@@ -189,10 +216,10 @@ func runInInitramfsChroot(cmdline []string) error {
 	return cmd.Run()
 }
 
-func resumeDevicesWithKeyfiles(cryptdevs []cryptdevice) {
+func resumeDevicesWithKeyfiles(cryptdevs []g.Cryptdevice) {
 	n := runtime.NumCPU()
 	wg := sync.WaitGroup{}
-	ch := make(chan *cryptdevice)
+	ch := make(chan *g.Cryptdevice)
 
 	wg.Add(1)
 	go func() {
@@ -207,23 +234,23 @@ func resumeDevicesWithKeyfiles(cryptdevs []cryptdevice) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for cd := range ch {
-				if !cd.suspended() {
+				if !cd.Suspended() {
 					continue
-				} else if !cd.exists() {
-					g.Warn("[WARNING] missing cryptdevice " + cd.name)
+				} else if !cd.Exists() {
+					g.Warn("[WARNING] missing cryptdevice " + cd.Name)
 					continue
-				} else if !cd.keyfile.exists() {
-					g.Warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.name))
+				} else if !cd.Keyfile.Exists() {
+					g.Warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.Name))
 					continue
 				}
 
-				g.Warn("Resuming " + cd.name)
+				g.Warn("Resuming " + cd.Name)
 
-				err := cd.resumeWithKeyfile()
+				err := cd.ResumeWithKeyfile()
 				if err != nil {
-					g.Warn(fmt.Sprintf("[ERROR] failed to resume %s: %s", cd.name, err.Error()))
+					g.Warn(fmt.Sprintf("[ERROR] failed to resume %s: %s", cd.Name, err.Error()))
 				} else {
-					g.Warn(cd.name + " resumed")
+					g.Warn(cd.Name + " resumed")
 				}
 			}
 			wg.Done()

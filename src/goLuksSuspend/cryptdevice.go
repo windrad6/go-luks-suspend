@@ -1,4 +1,4 @@
-package main
+package goLuksSuspend
 
 import (
 	"bufio"
@@ -14,17 +14,17 @@ import (
 	"strings"
 )
 
-type cryptdevice struct {
-	name         string
-	uuid         []byte
+type Cryptdevice struct {
+	Name         string
+	UUID         []byte
 	dmdir        string
-	keyfile      keyfile
-	isRootDevice bool
+	Keyfile      Keyfile
+	IsRootDevice bool
 }
 
 var luksUUIDPrefix = []byte("CRYPT-LUKS1-")
 
-func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
+func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
 	if err != nil || len(dirs) == 0 {
 		return nil, nil, err
@@ -35,8 +35,8 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 		return nil, nil, err
 	}
 
-	cryptdevs := make([]cryptdevice, 0, len(dirs))
-	cdmap := make(map[string]*cryptdevice, len(dirs))
+	cryptdevs := make([]Cryptdevice, 0, len(dirs))
+	cdmap := make(map[string]*Cryptdevice, len(dirs))
 
 	for i := range dirs {
 		// Skip if not a LUKS device
@@ -47,13 +47,13 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 			continue
 		}
 
-		cd := cryptdevice{
+		cd := Cryptdevice{
 			dmdir: dirs[i],
-			uuid:  bytes.TrimSuffix(uuid, []byte{'\n'}),
+			UUID:  bytes.TrimSuffix(uuid, []byte{'\n'}),
 		}
 
 		// Skip if suspended
-		if cd.suspended() {
+		if cd.Suspended() {
 			continue
 		}
 
@@ -62,33 +62,33 @@ func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 			return nil, nil, err
 		}
 
-		cd.name = string(bytes.TrimSpace(name))
-		if cd.name == rootdev {
-			cd.isRootDevice = true
-			cd.keyfile = rootkey
+		cd.Name = string(bytes.TrimSpace(name))
+		if cd.Name == rootdev {
+			cd.IsRootDevice = true
+			cd.Keyfile = rootkey
 		}
 		cryptdevs = append(cryptdevs, cd)
 
-		if v, ok := cdmap[cd.name]; ok {
+		if v, ok := cdmap[cd.Name]; ok {
 			return nil, nil, fmt.Errorf("duplicate cryptdevice: %#v", v)
 		}
-		cdmap[cd.name] = &cryptdevs[len(cryptdevs)-1]
+		cdmap[cd.Name] = &cryptdevs[len(cryptdevs)-1]
 	}
 
 	return cryptdevs, cdmap, nil
 }
 
-func (cd *cryptdevice) exists() bool {
+func (cd *Cryptdevice) Exists() bool {
 	uuid, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "uuid"))
 	if err != nil {
 		// A read error implies this device has been removed
 		return false
 	}
 
-	return bytes.Equal(cd.uuid, bytes.TrimSuffix(uuid, []byte{'\n'}))
+	return bytes.Equal(cd.UUID, bytes.TrimSuffix(uuid, []byte{'\n'}))
 }
 
-func (cd *cryptdevice) suspended() bool {
+func (cd *Cryptdevice) Suspended() bool {
 	buf, err := ioutil.ReadFile(filepath.Join(cd.dmdir, "suspended"))
 	if err != nil || len(buf) == 0 {
 		// Ignore the error here for a cleaner API; read errors imply
@@ -99,52 +99,27 @@ func (cd *cryptdevice) suspended() bool {
 	return buf[0] == '1'
 }
 
-func (cd *cryptdevice) resumeWithKeyfile() error {
+func (cd *Cryptdevice) ResumeWithKeyfile() error {
 	args := make([]string, 0, 8)
 
-	args = append(args, "--key-file", cd.keyfile.path)
-	if cd.keyfile.offset > 0 {
-		args = append(args, "--keyfile-offset", strconv.Itoa(cd.keyfile.offset))
+	args = append(args, "--key-file", cd.Keyfile.path)
+	if cd.Keyfile.offset > 0 {
+		args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.offset))
 	}
-	if cd.keyfile.size > 0 {
-		args = append(args, "--keyfile-size", strconv.Itoa(cd.keyfile.size))
+	if cd.Keyfile.size > 0 {
+		args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.size))
 	}
-	args = append(args, "luksResume", cd.name)
+	args = append(args, "luksResume", cd.Name)
 
 	return exec.Command("/usr/bin/cryptsetup", args...).Run()
 }
 
-func dumpCryptdevices(path string, cryptdevs []cryptdevice) error {
-	buf := make([][]byte, len(cryptdevs))
-	j := 1
-
-	for i := range cryptdevs {
-		if cryptdevs[i].isRootDevice {
-			if len(buf[0]) > 0 {
-				return fmt.Errorf(
-					"multiple root cryptdevices: %s, %s",
-					string(buf[0]),
-					cryptdevs[i].name,
-				)
-			}
-			buf[0] = []byte(cryptdevs[i].name)
-		} else if j >= len(buf) {
-			return errors.New("no root cryptdevice")
-		} else {
-			buf[j] = []byte(cryptdevs[i].name)
-			j++
-		}
-	}
-
-	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
-}
-
 var kernelCmdline = "/proc/cmdline"
 
-func getLUKSParamsFromKernelCmdline() (rootdev string, key keyfile, err error) {
+func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 	buf, err := ioutil.ReadFile(kernelCmdline)
 	if err != nil {
-		return "", keyfile{}, err
+		return "", Keyfile{}, err
 	}
 
 	//
@@ -199,7 +174,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key keyfile, err error) {
 	}
 
 	if len(rootdev) == 0 {
-		return "", keyfile{}, errors.New("no root cryptdevice")
+		return "", Keyfile{}, errors.New("no root cryptdevice")
 	}
 
 	return rootdev, key, nil
@@ -207,7 +182,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key keyfile, err error) {
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
 
-func addKeyfilesFromCrypttab(cdmap map[string]*cryptdevice) error {
+func AddKeyfilesFromCrypttab(cdmap map[string]*Cryptdevice) error {
 	file, err := os.Open("/etc/crypttab")
 	if err != nil {
 		return err
@@ -227,7 +202,7 @@ func addKeyfilesFromCrypttab(cdmap map[string]*cryptdevice) error {
 		}
 
 		if cd, ok := cdmap[name]; ok {
-			cd.keyfile = key
+			cd.Keyfile = key
 		}
 	}
 

@@ -1,17 +1,17 @@
-package main
+package goLuksSuspend
 
 import (
 	"strconv"
 	"strings"
 )
 
-type keyfile struct {
+type Keyfile struct {
 	path   string
 	offset int
 	size   int
 }
 
-func parseKeyfileFromCrypttabEntry(line string) (name string, key keyfile) {
+func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 	fields := strings.Fields(line)
 
 	// fields: name, device, keyfile, options
@@ -21,10 +21,10 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key keyfile) {
 	// not present or the password is set to "none" or "-", the password
 	// has to be manually entered during system boot.
 	if len(fields) < 3 || fields[2] == "-" || fields[2] == "none" {
-		return "", keyfile{}
+		return "", Keyfile{}
 	}
 
-	k := keyfile{path: fields[2]}
+	k := Keyfile{path: fields[2]}
 
 	if len(fields) >= 4 {
 		opts := strings.Split(fields[3], ",")
@@ -51,6 +51,6 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key keyfile) {
 	return fields[0], k
 }
 
-func (k *keyfile) exists() bool {
+func (k *Keyfile) Exists() bool {
 	return len(k.path) > 0
 }

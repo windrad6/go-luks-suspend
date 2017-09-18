@@ -31,14 +31,14 @@ func main() {
 	g.ParseFlags()
 
 	g.Debug("gathering cryptdevices")
-	cryptdevs, cdmap, err := getcryptdevices()
+	cryptdevs, cdmap, err := g.GetCryptdevices()
 	g.Assert(err)
 	if g.DebugMode {
 		for i := range cryptdevs {
 			g.Debug(fmt.Sprintf("name:%#v uuid:%#v isRootDevice:%#v",
-				cryptdevs[i].name,
-				string(cryptdevs[i].uuid),
-				cryptdevs[i].isRootDevice,
+				cryptdevs[i].Name,
+				string(cryptdevs[i].UUID),
+				cryptdevs[i].IsRootDevice,
 			))
 		}
 	}
@@ -127,11 +127,11 @@ func main() {
 
 	// Safe to grab keyfile info after root device is unlocked
 	g.Debug("gathering keyfiles from /etc/crypttab")
-	g.Assert(addKeyfilesFromCrypttab(cdmap))
+	g.Assert(g.AddKeyfilesFromCrypttab(cdmap))
 	if g.DebugMode {
 		for i := range cryptdevs {
-			if cryptdevs[i].keyfile.exists() {
-				g.Debug(fmt.Sprintf("%#v", cryptdevs[i].keyfile))
+			if cryptdevs[i].Keyfile.Exists() {
+				g.Debug(fmt.Sprintf("%#v", cryptdevs[i].Keyfile))
 			}
 		}
 	}
