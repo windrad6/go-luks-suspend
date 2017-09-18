@@ -83,9 +83,13 @@ func main() {
 	g.Assert(err)
 	g.Debug("stopped " + strings.Join(services, ", "))
 
+	servicesRestarted := false
+
 	defer func() {
-		g.Debug("starting previously stopped system services")
-		g.Assert(startSystemServices(services))
+		if !servicesRestarted {
+			g.Debug("starting previously stopped system services")
+			g.Assert(startSystemServices(services))
+		}
 	}()
 
 	g.Debug("flushing pending writes")
@@ -101,6 +105,11 @@ func main() {
 
 	g.Debug("calling suspend in initramfs chroot")
 	g.Assert(suspendInInitramfsChroot(cryptdevs))
+
+	// We need to start up udevd ASAP so we can detect new block devices
+	g.Debug("starting previously stopped system services")
+	g.Assert(startSystemServices(services))
+	servicesRestarted = true
 
 	defer func() {
 		g.Debug("resuming cryptdevices with keyfiles")
