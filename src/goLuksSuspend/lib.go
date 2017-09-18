@@ -67,6 +67,10 @@ func DebugShell() {
 	fmt.Println("EXIT DEBUG SHELL")
 }
 
+func Cryptsetup(args ...string) error {
+	return exec.Command("/usr/bin/cryptsetup", args...).Run()
+}
+
 func Systemctl(args ...string) error {
 	return exec.Command("/usr/bin/systemctl", args...).Run()
 }

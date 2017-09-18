@@ -141,7 +141,7 @@ func (cd *Cryptdevice) ResumeWithKeyfile() error {
 	}
 	args = append(args, "luksResume", cd.Name)
 
-	return exec.Command("/usr/bin/cryptsetup", args...).Run()
+	return Cryptsetup(args...)
 }
 
 var kernelCmdline = "/proc/cmdline"

@@ -26,8 +26,7 @@ func suspendCryptdevices(cryptdevs []g.Cryptdevice) error {
 	// without building a directed graph of cryptdevices -> cryptdevices.
 	for i := len(cryptdevs) - 1; i >= 0; i-- {
 		g.Debug("suspending " + cryptdevs[i].Name)
-		err := exec.Command("/usr/bin/cryptsetup", "luksSuspend", cryptdevs[i].Name).Run()
-		if err != nil {
+		if err := g.Cryptsetup("luksSuspend", cryptdevs[i].Name); err != nil {
 			return err
 		}
 	}
