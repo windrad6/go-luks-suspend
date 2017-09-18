@@ -42,13 +42,16 @@ func stopUdevDaemon() error {
 	return exec.Command("/usr/bin/udevadm", "control", "--exit").Run()
 }
 
-func printPassphrasePrompt(rootdev string) {
-	if g.DebugMode {
-		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.")
-	} else {
-		fmt.Println("\nPress Escape to suspend to RAM.")
+func printPassphrasePrompt(rootdev g.Cryptdevice) {
+	fmt.Print("\nPress Escape to suspend to RAM")
+	if rootdev.Keyfile.Defined() {
+		fmt.Print(", or Ctrl-R to rescan block devices for keyfiles")
 	}
-	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
+	if g.DebugMode {
+		fmt.Print(", or Ctrl-T to start a debug shell")
+	}
+	fmt.Println(".")
+	fmt.Printf("\nEnter passphrase for %s: ", rootdev.Name)
 }
 
 func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
@@ -58,7 +61,7 @@ func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
 		}
 	}
 
-	printPassphrasePrompt(dev.Name)
+	printPassphrasePrompt(dev)
 	return dev.Resume(stdin)
 }
 
@@ -90,7 +93,7 @@ func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 			g.Debug("suspending to RAM")
 			g.Assert(g.SuspendToRAM())
 			fmt.Println()
-			printPassphrasePrompt(rootdev.Name)
+			printPassphrasePrompt(rootdev)
 			return editreader.Kill
 		case 0x17: // ^W
 			return editreader.Kill
@@ -99,10 +102,13 @@ func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 			g.Assert(restoreTTY())
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
+		case 0x12: // ^R
+			fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
+			return editreader.Kill | editreader.Flush | editreader.Close
 		case 0x14: // ^T
 			if g.DebugMode {
 				g.DebugShell()
-				printPassphrasePrompt(rootdev.Name)
+				printPassphrasePrompt(rootdev)
 				return editreader.Kill
 			}
 			fallthrough
