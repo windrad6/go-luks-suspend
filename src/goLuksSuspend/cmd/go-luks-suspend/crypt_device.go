@@ -26,10 +26,8 @@ var luksUUIDPrefix = []byte("CRYPT-LUKS1-")
 
 func getcryptdevices() ([]cryptdevice, map[string]*cryptdevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
-	if err != nil {
+	if err != nil || len(dirs) == 0 {
 		return nil, nil, err
-	} else if len(dirs) == 0 {
-		return nil, nil, nil
 	}
 
 	rootdev, rootkey, err := getLUKSParamsFromKernelCmdline()
