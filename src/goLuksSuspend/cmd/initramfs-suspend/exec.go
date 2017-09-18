@@ -84,11 +84,6 @@ func resumeRootCryptDevice(rootdev string) error {
 	// The `secure` parameter to editreader.New zeroes memory aggressively
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {
 		switch b {
-		case 0x14: // ^T
-			if g.DebugMode {
-				g.DebugShell()
-			}
-			return 0
 		case 0x1b: // ^[
 			g.Debug("suspending to RAM")
 			g.Assert(g.SuspendToRAM())
@@ -102,6 +97,13 @@ func resumeRootCryptDevice(rootdev string) error {
 			g.Assert(restoreTTY())
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
+		case 0x14: // ^T
+			if g.DebugMode {
+				g.DebugShell()
+				printPassphrasePrompt(rootdev)
+				return editreader.Kill
+			}
+			fallthrough
 		default:
 			return editreader.BasicLineEdit(i, b)
 		}
