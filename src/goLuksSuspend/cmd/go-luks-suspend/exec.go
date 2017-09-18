@@ -182,24 +182,9 @@ func suspendCmdline(debug, poweroff bool) []string {
 
 func dumpCryptdevices(path string, cryptdevs []g.Cryptdevice) error {
 	buf := make([][]byte, len(cryptdevs))
-	j := 1
 
 	for i := range cryptdevs {
-		if cryptdevs[i].IsRootDevice {
-			if len(buf[0]) > 0 {
-				return fmt.Errorf(
-					"multiple root cryptdevices: %s, %s",
-					string(buf[0]),
-					cryptdevs[i].Name,
-				)
-			}
-			buf[0] = []byte(cryptdevs[i].Name)
-		} else if j >= len(buf) {
-			return errors.New("no root cryptdevice")
-		} else {
-			buf[j] = []byte(cryptdevs[i].Name)
-			j++
-		}
+		buf[i] = []byte(cryptdevs[i].Name)
 	}
 
 	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)

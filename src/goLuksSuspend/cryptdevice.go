@@ -35,8 +35,9 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 		return nil, nil, err
 	}
 
-	cryptdevs := make([]Cryptdevice, 0, len(dirs))
+	cryptdevs := make([]Cryptdevice, len(dirs))
 	cdmap := make(map[string]*Cryptdevice, len(dirs))
+	j, lastidx := 1, 0
 
 	for i := range dirs {
 		// Skip if not a LUKS device
@@ -63,19 +64,34 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 		}
 
 		cd.Name = string(bytes.TrimSpace(name))
+
 		if cd.Name == rootdev {
+			if cryptdevs[0].IsRootDevice {
+				return nil, nil, fmt.Errorf(
+					"multiple root cryptdevices: %s, %s",
+					cryptdevs[0].Name,
+					cd.Name,
+				)
+			}
 			cd.IsRootDevice = true
 			cd.Keyfile = rootkey
+			cryptdevs[0] = cd
+			lastidx = 0
+		} else if j >= len(dirs) {
+			return nil, nil, errors.New("no root cryptdevice")
+		} else {
+			cryptdevs[j] = cd
+			lastidx = j
+			j++
 		}
-		cryptdevs = append(cryptdevs, cd)
 
 		if v, ok := cdmap[cd.Name]; ok {
 			return nil, nil, fmt.Errorf("duplicate cryptdevice: %#v", v)
 		}
-		cdmap[cd.Name] = &cryptdevs[len(cryptdevs)-1]
+		cdmap[cd.Name] = &cryptdevs[lastidx]
 	}
 
-	return cryptdevs, cdmap, nil
+	return cryptdevs[:j], cdmap, nil
 }
 
 func (cd *Cryptdevice) Exists() bool {
