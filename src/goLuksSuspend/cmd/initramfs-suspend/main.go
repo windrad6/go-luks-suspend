@@ -28,8 +28,8 @@ func main() {
 	oldtimeout, err := g.SetFreezeTimeout([]byte{'1', '0', '0', '0'})
 	if err == nil {
 		defer func() {
-			_, err := g.SetFreezeTimeout(oldtimeout)
-			g.Assert(err)
+			_, e := g.SetFreezeTimeout(oldtimeout)
+			g.Assert(e)
 		}()
 	} else {
 		g.Assert(err)
