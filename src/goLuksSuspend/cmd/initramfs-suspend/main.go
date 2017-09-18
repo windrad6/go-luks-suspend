@@ -40,6 +40,14 @@ func main() {
 		g.Assert(g.SuspendToRAM())
 	}
 
+	g.Debug("starting udevd from initramfs")
+	g.Assert(startUdevDaemon())
+
+	defer func() {
+		g.Debug("stopping udevd within initramfs")
+		g.Assert(stopUdevDaemon())
+	}()
+
 loop:
 	for {
 		g.Debug("resuming root cryptdevice")

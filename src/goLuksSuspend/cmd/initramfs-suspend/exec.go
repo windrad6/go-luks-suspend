@@ -35,6 +35,14 @@ func suspendCryptdevices(cryptdevs []g.Cryptdevice) error {
 	return nil
 }
 
+func startUdevDaemon() error {
+	return exec.Command("/usr/lib/systemd/systemd-udevd", "--daemon", "--resolve-names=never").Run()
+}
+
+func stopUdevDaemon() error {
+	return exec.Command("/usr/bin/udevadm", "control", "--exit").Run()
+}
+
 func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
 	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", dev.Name)
 	cmd.Stdin = stdin
