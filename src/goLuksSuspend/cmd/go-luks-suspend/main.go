@@ -124,7 +124,7 @@ func main() {
 	g.Assert(g.AddKeyfilesFromCrypttab(cdmap))
 	if g.DebugMode {
 		for i := range cryptdevs {
-			if cryptdevs[i].Keyfile.Exists() {
+			if cryptdevs[i].Keyfile.Defined() {
 				g.Debug(fmt.Sprintf("%#v", cryptdevs[i].Keyfile))
 			}
 		}

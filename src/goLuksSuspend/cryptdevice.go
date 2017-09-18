@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -115,9 +116,22 @@ func (cd *Cryptdevice) Suspended() bool {
 	return buf[0] == '1'
 }
 
-func (cd *Cryptdevice) ResumeWithKeyfile() error {
-	args := make([]string, 0, 8)
+func (cd *Cryptdevice) Resume(stdin io.Reader) error {
+	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", cd.Name)
+	cmd.Stdin = stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
 
+var errNoKeyfile = errors.New("no keyfile")
+
+func (cd *Cryptdevice) ResumeWithKeyfile() error {
+	if !cd.Keyfile.Available() {
+		return errNoKeyfile
+	}
+
+	args := make([]string, 0, 8)
 	args = append(args, "--key-file", cd.Keyfile.Path)
 	if cd.Keyfile.Offset > 0 {
 		args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.Offset))

@@ -236,8 +236,8 @@ func resumeCryptdevicesWithKeyfiles(cryptdevs []g.Cryptdevice) {
 				} else if !cd.Exists() {
 					g.Warn("[WARNING] missing cryptdevice " + cd.Name)
 					continue
-				} else if !cd.Keyfile.Exists() {
-					g.Warn(fmt.Sprintf("[WARNING] no keyfile for cryptdevice %s; skipping", cd.Name))
+				} else if !cd.Keyfile.Available() {
+					g.Warn(fmt.Sprintf("[WARNING] keyfile for cryptdevice %s unavailable; skipping", cd.Name))
 					continue
 				}
 

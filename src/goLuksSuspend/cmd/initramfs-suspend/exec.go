@@ -43,14 +43,6 @@ func stopUdevDaemon() error {
 	return exec.Command("/usr/bin/udevadm", "control", "--exit").Run()
 }
 
-func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
-	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", dev.Name)
-	cmd.Stdin = stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func printPassphrasePrompt(rootdev string) {
 	if g.DebugMode {
 		fmt.Println("\nPress Escape to suspend to RAM or Ctrl-T to start a debug shell.")
@@ -58,6 +50,17 @@ func printPassphrasePrompt(rootdev string) {
 		fmt.Println("\nPress Escape to suspend to RAM.")
 	}
 	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
+}
+
+func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
+	if dev.Keyfile.Available() {
+		if err := dev.ResumeWithKeyfile(); err == nil {
+			return nil
+		}
+	}
+
+	printPassphrasePrompt(dev.Name)
+	return dev.Resume(stdin)
 }
 
 func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
@@ -80,8 +83,6 @@ func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 		g.Warn(err.Error())
 		return luksResume(rootdev, os.Stdin)
 	}
-
-	printPassphrasePrompt(rootdev.Name)
 
 	// The `secure` parameter to editreader.New zeroes memory aggressively
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {

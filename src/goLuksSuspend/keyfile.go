@@ -1,6 +1,7 @@
 package goLuksSuspend
 
 import (
+	"os"
 	"strconv"
 	"strings"
 )
@@ -51,6 +52,14 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 	return fields[0], k
 }
 
-func (k *Keyfile) Exists() bool {
+func (k *Keyfile) Defined() bool {
 	return len(k.Path) > 0
+}
+
+func (k *Keyfile) Available() bool {
+	if !k.Defined() {
+		return false
+	}
+	_, err := os.Stat(k.Path)
+	return !os.IsNotExist(err)
 }
