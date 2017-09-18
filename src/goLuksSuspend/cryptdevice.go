@@ -16,7 +16,7 @@ import (
 
 type Cryptdevice struct {
 	Name         string
-	UUID         []byte
+	uuid         []byte
 	dmdir        string
 	Keyfile      Keyfile
 	IsRootDevice bool
@@ -50,7 +50,7 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 
 		cd := Cryptdevice{
 			dmdir: dirs[i],
-			UUID:  bytes.TrimSuffix(uuid, []byte{'\n'}),
+			uuid:  bytes.TrimSuffix(uuid, []byte{'\n'}),
 		}
 
 		// Skip if suspended
@@ -101,7 +101,7 @@ func (cd *Cryptdevice) Exists() bool {
 		return false
 	}
 
-	return bytes.Equal(cd.UUID, bytes.TrimSuffix(uuid, []byte{'\n'}))
+	return bytes.Equal(cd.uuid, bytes.TrimSuffix(uuid, []byte{'\n'}))
 }
 
 func (cd *Cryptdevice) Suspended() bool {
@@ -118,12 +118,12 @@ func (cd *Cryptdevice) Suspended() bool {
 func (cd *Cryptdevice) ResumeWithKeyfile() error {
 	args := make([]string, 0, 8)
 
-	args = append(args, "--key-file", cd.Keyfile.path)
-	if cd.Keyfile.offset > 0 {
-		args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.offset))
+	args = append(args, "--key-file", cd.Keyfile.Path)
+	if cd.Keyfile.Offset > 0 {
+		args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.Offset))
 	}
-	if cd.Keyfile.size > 0 {
-		args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.size))
+	if cd.Keyfile.Size > 0 {
+		args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
 	}
 	args = append(args, "luksResume", cd.Name)
 
@@ -143,7 +143,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 	//
 
 	params := strings.Fields(string(buf))
-	key.path = "/crypto_keyfile.bin"
+	key.Path = "/crypto_keyfile.bin"
 
 	for i := range params {
 		kv := strings.SplitN(params[i], "=", 2)
@@ -165,7 +165,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 
 			// cryptkey=rootfs:path
 			if len(fields) == 2 && fields[0] == "rootfs" {
-				key.path = fields[1]
+				key.Path = fields[1]
 				continue
 			}
 
@@ -179,9 +179,9 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 				if err != nil {
 					continue // ignore malformed entry
 				}
-				key.path = fields[0]
-				key.offset = offset
-				key.size = size
+				key.Path = fields[0]
+				key.Offset = offset
+				key.Size = size
 				continue
 			}
 

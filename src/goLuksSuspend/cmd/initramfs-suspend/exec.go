@@ -1,12 +1,11 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 
 	g "goLuksSuspend"
@@ -15,24 +14,19 @@ import (
 	"github.com/guns/golibs/sys"
 )
 
-// loadCryptnames loads the names written to a path by Dump
-func loadCryptnames(path string) ([]string, error) {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return strings.Split(string(buf), "\x00"), nil
+func loadCryptdevices(r io.Reader) (cryptdevs []g.Cryptdevice, err error) {
+	err = gob.NewDecoder(r).Decode(&cryptdevs)
+	return cryptdevs, err
 }
 
-func suspendCryptDevices(deviceNames []string) error {
+func suspendCryptdevices(cryptdevs []g.Cryptdevice) error {
 	// Iterate backwards so that we suspend the root device last. This prevents
 	// a logical deadlock in which a cryptdevice is actually a file on the root
 	// device. There is no way of solving this problem in the general case
 	// without building a directed graph of cryptdevices -> cryptdevices.
-	for i := len(deviceNames) - 1; i >= 0; i-- {
-		g.Debug("suspending " + deviceNames[i])
-		err := exec.Command("/usr/bin/cryptsetup", "luksSuspend", deviceNames[i]).Run()
+	for i := len(cryptdevs) - 1; i >= 0; i-- {
+		g.Debug("suspending " + cryptdevs[i].Name)
+		err := exec.Command("/usr/bin/cryptsetup", "luksSuspend", cryptdevs[i].Name).Run()
 		if err != nil {
 			return err
 		}
@@ -41,8 +35,8 @@ func suspendCryptDevices(deviceNames []string) error {
 	return nil
 }
 
-func luksResume(device string, stdin io.Reader) error {
-	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", device)
+func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
+	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", dev.Name)
 	cmd.Stdin = stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -58,7 +52,7 @@ func printPassphrasePrompt(rootdev string) {
 	fmt.Printf("\nEnter passphrase for %s: ", rootdev)
 }
 
-func resumeRootCryptDevice(rootdev string) error {
+func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETSF, func(tty syscall.Termios) syscall.Termios {
 		tty.Lflag &^= syscall.ICANON | syscall.ECHO
 		return tty
@@ -79,7 +73,7 @@ func resumeRootCryptDevice(rootdev string) error {
 		return luksResume(rootdev, os.Stdin)
 	}
 
-	printPassphrasePrompt(rootdev)
+	printPassphrasePrompt(rootdev.Name)
 
 	// The `secure` parameter to editreader.New zeroes memory aggressively
 	r := editreader.New(os.Stdin, 4096, true, func(i int, b byte) editreader.Op {
@@ -88,7 +82,7 @@ func resumeRootCryptDevice(rootdev string) error {
 			g.Debug("suspending to RAM")
 			g.Assert(g.SuspendToRAM())
 			fmt.Println()
-			printPassphrasePrompt(rootdev)
+			printPassphrasePrompt(rootdev.Name)
 			return editreader.Kill
 		case 0x17: // ^W
 			return editreader.Kill
@@ -100,7 +94,7 @@ func resumeRootCryptDevice(rootdev string) error {
 		case 0x14: // ^T
 			if g.DebugMode {
 				g.DebugShell()
-				printPassphrasePrompt(rootdev)
+				printPassphrasePrompt(rootdev.Name)
 				return editreader.Kill
 			}
 			fallthrough

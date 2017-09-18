@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -35,9 +33,8 @@ func main() {
 	g.Assert(err)
 	if g.DebugMode {
 		for i := range cryptdevs {
-			g.Debug(fmt.Sprintf("name:%#v uuid:%#v isRootDevice:%#v",
+			g.Debug(fmt.Sprintf("Name:%#v IsRootDevice:%#v",
 				cryptdevs[i].Name,
-				string(cryptdevs[i].UUID),
 				cryptdevs[i].IsRootDevice,
 			))
 		}
@@ -102,24 +99,12 @@ func main() {
 		enableWriteBarriers(filesystems)
 	}()
 
-	g.Debug("dumping list of cryptdevice names to initramfs")
-	g.Assert(dumpCryptdevices(cryptdevicesPath, cryptdevs))
-	if g.DebugMode {
-		buf, _ := ioutil.ReadFile(cryptdevicesPath) // errcheck: debugmode only
-		g.Debug(fmt.Sprintf("%s: %#v", cryptdevicesPath, string(buf)))
-	}
-
-	defer func() {
-		g.Debug("removing cryptdevice dump file")
-		g.Assert(os.Remove(cryptdevicesPath))
-	}()
-
 	g.Debug("calling suspend in initramfs chroot")
-	g.Assert(runInInitramfsChroot(suspendCmdline(g.DebugMode, g.PoweroffOnError)))
+	g.Assert(suspendInInitramfsChroot(cryptdevs))
 
 	defer func() {
 		g.Debug("resuming cryptdevices with keyfiles")
-		resumeDevicesWithKeyfiles(cryptdevs)
+		resumeCryptdevicesWithKeyfiles(cryptdevs)
 	}()
 
 	// User has unlocked the root device, so let's be less paranoid

@@ -16,6 +16,13 @@
 			"path": "/errjoin"
 		},
 		{
+			"importpath": "github.com/guns/golibs/process",
+			"repository": "https://github.com/guns/golibs",
+			"revision": "4610b44ef08d5261770db4515c56eb9483364cf5",
+			"branch": "master",
+			"path": "/process"
+		},
+		{
 			"importpath": "github.com/guns/golibs/sys",
 			"repository": "https://github.com/guns/golibs",
 			"revision": "c669e3799bb54d77a55b3b9dd975583314943908",

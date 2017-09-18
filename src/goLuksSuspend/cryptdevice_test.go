@@ -24,28 +24,28 @@ func TestKernelCmdlineParsing(t *testing.T) {
 		{
 			in:   "cryptdevice=UUID=d55cc35b-e99b-44ce-be89-4c573fccfb0b:cryptroot root=/dev/mapper/cryptroot\n",
 			name: "cryptroot",
-			key:  Keyfile{path: "/crypto_keyfile.bin"},
+			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		{
 			in:   "cryptdevice=/dev/sda1:cryptroot1 cryptdevice=/dev/sda2:cryptroot2\n",
 			name: "cryptroot2",
-			key:  Keyfile{path: "/crypto_keyfile.bin"},
+			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		{
 			in:   "cryptdevice=UUID=cd5dd4dc-5766-493e-b3c6-3d6dfd195082:cryptolvm:allow-discards root=/dev/mapper/system-root",
 			name: "cryptolvm",
-			key:  Keyfile{path: "/crypto_keyfile.bin"},
+			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		// cryptkey=
 		{
 			in:   "cryptdevice=/dev/sda2:root cryptkey=rootfs:/var/rootfs.key\n",
 			name: "root",
-			key:  Keyfile{path: "/var/rootfs.key"},
+			key:  Keyfile{Path: "/var/rootfs.key"},
 		},
 		{
 			in:   "cryptdevice=/dev/sda2:root cryptkey=/dev/sdb:512:1024\n",
 			name: "root",
-			key:  Keyfile{path: "/dev/sdb", offset: 512, size: 1024},
+			key:  Keyfile{Path: "/dev/sdb", Offset: 512, Size: 1024},
 		},
 		// errors
 		{

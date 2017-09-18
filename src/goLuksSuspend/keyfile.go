@@ -6,9 +6,9 @@ import (
 )
 
 type Keyfile struct {
-	path   string
-	offset int
-	size   int
+	Path   string
+	Offset int
+	Size   int
 }
 
 func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
@@ -24,7 +24,7 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 		return "", Keyfile{}
 	}
 
-	k := Keyfile{path: fields[2]}
+	k := Keyfile{Path: fields[2]}
 
 	if len(fields) >= 4 {
 		opts := strings.Split(fields[3], ",")
@@ -37,13 +37,13 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 				if err != nil {
 					continue
 				}
-				k.offset = n
+				k.Offset = n
 			} else if kv[0] == "keyfile-size" {
 				n, err := strconv.Atoi(kv[1])
 				if err != nil {
 					continue
 				}
-				k.size = n
+				k.Size = n
 			}
 		}
 	}
@@ -52,5 +52,5 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 }
 
 func (k *Keyfile) Exists() bool {
-	return len(k.path) > 0
+	return len(k.Path) > 0
 }

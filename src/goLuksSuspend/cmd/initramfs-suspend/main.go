@@ -1,8 +1,7 @@
 package main
 
 import (
-	"errors"
-	"flag"
+	"os"
 
 	g "goLuksSuspend"
 )
@@ -10,16 +9,16 @@ import (
 func main() {
 	g.ParseFlags()
 
-	if flag.NArg() != 1 {
-		g.Assert(errors.New("cryptmounts path unspecified"))
-	}
+	r := os.NewFile(uintptr(3), "r")
 
 	g.Debug("loading cryptdevice names")
-	cryptnames, err := loadCryptnames(flag.Arg(0))
+	cryptdevs, err := loadCryptdevices(r)
 	g.Assert(err)
 
+	g.Assert(r.Close())
+
 	g.Debug("suspending cryptdevices")
-	g.Assert(suspendCryptDevices(cryptnames))
+	g.Assert(suspendCryptdevices(cryptdevs))
 
 	// Crypt keys have been purged, so be less paranoid
 	g.IgnoreErrors = true
@@ -38,7 +37,6 @@ func main() {
 	if g.DebugMode {
 		g.Debug("debug: skipping suspend to RAM")
 	} else {
-		g.Debug("suspending system to RAM")
 		g.Assert(g.SuspendToRAM())
 	}
 
@@ -47,7 +45,7 @@ loop:
 		g.Debug("resuming root cryptdevice")
 		var err error
 		for i := 0; i < 3; i++ {
-			err = resumeRootCryptDevice(cryptnames[0])
+			err = resumeRootCryptdevice(cryptdevs[0])
 			if err == nil {
 				break loop
 			}

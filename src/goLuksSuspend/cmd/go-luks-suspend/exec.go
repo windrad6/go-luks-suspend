@@ -1,20 +1,21 @@
 package main
 
 import (
-	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sync"
 	"syscall"
+	"time"
 
 	g "goLuksSuspend"
 
 	"github.com/guns/golibs/errjoin"
+	"github.com/guns/golibs/process"
 )
 
 func checkRootOwnedAndExecutablePath(path string) error {
@@ -169,39 +170,52 @@ func enableWriteBarriers(filesystems []filesystem) {
 	}
 }
 
-func suspendCmdline(debug, poweroff bool) []string {
-	args := []string{"/suspend"}
-	if debug {
+func suspendInInitramfsChroot(cryptdevs []g.Cryptdevice) (err error) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+
+	args := []string{}
+	if g.DebugMode {
 		args = append(args, "-debug")
 	}
-	if poweroff {
+	if g.PoweroffOnError {
 		args = append(args, "-poweroff")
 	}
-	return append(args, filepath.Join("run", filepath.Base(cryptdevicesPath)))
-}
 
-func dumpCryptdevices(path string, cryptdevs []g.Cryptdevice) error {
-	buf := make([][]byte, len(cryptdevs))
-
-	for i := range cryptdevs {
-		buf[i] = []byte(cryptdevs[i].Name)
-	}
-
-	return ioutil.WriteFile(path, bytes.Join(buf, []byte{0}), 0600)
-}
-
-func runInInitramfsChroot(cmdline []string) error {
-	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	cmd := exec.Command("/suspend", args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Chroot: initramfsDir}
 	cmd.Dir = "/"
 	cmd.Env = []string{}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd.ExtraFiles = []*os.File{r} // child receives read end only
+
+	if err := cmd.Start(); err != nil {
+		return errjoin.Join(" • ", err, r.Close(), w.Close())
+	}
+
+	defer func() {
+		werr := w.Close()                                // close write end once here
+		err = errjoin.Join(" • ", err, werr, cmd.Wait()) // reap child once here
+	}()
+
+	// Close our unused read end now
+	if err := r.Close(); err != nil {
+		return err
+	}
+
+	err = gob.NewEncoder(w).Encode(cryptdevs)
+	if err != nil {
+		process.Terminate(cmd.Process, 2*time.Second)
+	}
+
+	return err
 }
 
-func resumeDevicesWithKeyfiles(cryptdevs []g.Cryptdevice) {
+func resumeCryptdevicesWithKeyfiles(cryptdevs []g.Cryptdevice) {
 	n := runtime.NumCPU()
 	wg := sync.WaitGroup{}
 	ch := make(chan *g.Cryptdevice)
