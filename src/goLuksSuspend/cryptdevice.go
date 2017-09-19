@@ -157,7 +157,6 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 	//
 
 	params := strings.Fields(string(buf))
-	key.Path = "/crypto_keyfile.bin"
 
 	for i := range params {
 		kv := strings.SplitN(params[i], "=", 2)
