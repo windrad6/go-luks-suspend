@@ -35,11 +35,11 @@ func suspendCryptdevices(cryptdevs []g.Cryptdevice) error {
 }
 
 func startUdevDaemon() error {
-	return exec.Command("/usr/lib/systemd/systemd-udevd", "--daemon", "--resolve-names=never").Run()
+	return g.Run(exec.Command("/usr/lib/systemd/systemd-udevd", "--daemon", "--resolve-names=never"))
 }
 
 func stopUdevDaemon() error {
-	return exec.Command("/usr/bin/udevadm", "control", "--exit").Run()
+	return g.Run(exec.Command("/usr/bin/udevadm", "control", "--exit"))
 }
 
 func printPassphrasePrompt(rootdev *g.Cryptdevice) {

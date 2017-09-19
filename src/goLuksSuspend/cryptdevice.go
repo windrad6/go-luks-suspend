@@ -124,7 +124,7 @@ func (cd *Cryptdevice) Resume(stdin io.Reader) error {
 	cmd.Stdin = stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return Run(cmd)
 }
 
 var errNoKeyfile = errors.New("no keyfile")

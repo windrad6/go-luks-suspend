@@ -111,7 +111,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 		wg.Add(1)
 		go func(i int) {
 			script := filepath.Join(systemSleepDir, fs[i].Name())
-			err := exec.Command(script, scriptarg, "suspend").Run()
+			err := g.Run(exec.Command(script, scriptarg, "suspend"))
 			if err != nil {
 				errslice[i] = errors.New(script + ": " + err.Error())
 			}

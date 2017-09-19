@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var DebugMode = false
@@ -67,12 +68,23 @@ func DebugShell() {
 	fmt.Println("EXIT DEBUG SHELL")
 }
 
+func Run(cmd *exec.Cmd) error {
+	if DebugMode {
+		if len(cmd.Args) > 0 {
+			Warn("exec: " + strings.Join(cmd.Args, " "))
+		} else {
+			Warn("exec: " + cmd.Path)
+		}
+	}
+	return cmd.Run()
+}
+
 func Cryptsetup(args ...string) error {
-	return exec.Command("/usr/bin/cryptsetup", args...).Run()
+	return Run(exec.Command("/usr/bin/cryptsetup", args...))
 }
 
 func Systemctl(args ...string) error {
-	return exec.Command("/usr/bin/systemctl", args...).Run()
+	return Run(exec.Command("/usr/bin/systemctl", args...))
 }
 
 const freezeTimeoutPath = "/sys/power/pm_freeze_timeout"
