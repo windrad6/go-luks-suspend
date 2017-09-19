@@ -50,7 +50,7 @@ func getFilesystemsWithWriteBarriers() ([]filesystem, error) {
 	return fs, nil
 }
 
-func (fs filesystem) isMounted() bool {
+func (fs *filesystem) isMounted() bool {
 	devno, err := lstatDevno(fs.mountpoint)
 	if err != nil {
 		return false
@@ -59,11 +59,11 @@ func (fs filesystem) isMounted() bool {
 	return fs.devno == devno
 }
 
-func (fs filesystem) disableWriteBarrier() error {
+func (fs *filesystem) disableWriteBarrier() error {
 	return syscall.Mount("", fs.mountpoint, "", syscall.MS_REMOUNT, "nobarrier")
 }
 
-func (fs filesystem) enableWriteBarrier() error {
+func (fs *filesystem) enableWriteBarrier() error {
 	return syscall.Mount("", fs.mountpoint, "", syscall.MS_REMOUNT, "barrier")
 }
 

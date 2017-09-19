@@ -42,7 +42,7 @@ func stopUdevDaemon() error {
 	return exec.Command("/usr/bin/udevadm", "control", "--exit").Run()
 }
 
-func printPassphrasePrompt(rootdev g.Cryptdevice) {
+func printPassphrasePrompt(rootdev *g.Cryptdevice) {
 	fmt.Print("\nPress Escape to suspend to RAM")
 	if rootdev.Keyfile.Defined() {
 		fmt.Print(", or Ctrl-R to rescan block devices for keyfiles")
@@ -54,7 +54,7 @@ func printPassphrasePrompt(rootdev g.Cryptdevice) {
 	fmt.Printf("\nEnter passphrase for %s: ", rootdev.Name)
 }
 
-func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
+func luksResume(dev *g.Cryptdevice, stdin io.Reader) error {
 	if dev.Keyfile.Available() {
 		if err := dev.ResumeWithKeyfile(); err == nil {
 			return nil
@@ -65,7 +65,7 @@ func luksResume(dev g.Cryptdevice, stdin io.Reader) error {
 	return dev.Resume(stdin)
 }
 
-func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
+func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
 	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETSF, func(tty syscall.Termios) syscall.Termios {
 		tty.Lflag &^= syscall.ICANON | syscall.ECHO
 		return tty

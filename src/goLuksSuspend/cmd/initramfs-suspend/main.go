@@ -53,7 +53,7 @@ loop:
 		g.Debug("resuming root cryptdevice")
 		var err error
 		for i := 0; i < 3; i++ {
-			err = resumeRootCryptdevice(cryptdevs[0])
+			err = resumeRootCryptdevice(&cryptdevs[0])
 			if err == nil {
 				break loop
 			}
