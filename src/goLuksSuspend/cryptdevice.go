@@ -13,6 +13,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
+
+	"github.com/guns/golibs/errutil"
 )
 
 type Cryptdevice struct {
@@ -126,19 +129,41 @@ func (cd *Cryptdevice) Resume(stdin io.Reader) error {
 
 var errNoKeyfile = errors.New("no keyfile")
 
-func (cd *Cryptdevice) ResumeWithKeyfile() error {
+const keyfileMountDir = "/go-luks-suspend-mnt"
+
+func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 	if !cd.Keyfile.Available() {
 		return errNoKeyfile
 	}
 
 	args := make([]string, 0, 8)
-	args = append(args, "--key-file", cd.Keyfile.Path)
-	if cd.Keyfile.Offset > 0 {
-		args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.Offset))
+
+	if cd.Keyfile.inFilesystem() {
+		if err := os.Mkdir(keyfileMountDir, 0700); err != nil {
+			return err
+		}
+		defer func() {
+			err = errutil.First(err, os.Remove(keyfileMountDir))
+		}()
+
+		if err := syscall.Mount(cd.Keyfile.Device, keyfileMountDir, cd.Keyfile.FSType, syscall.MS_RDONLY, ""); err != nil {
+			return err
+		}
+		defer func() {
+			err = errutil.First(err, syscall.Unmount(keyfileMountDir, 0))
+		}()
+
+		args = append(args, "--key-file", filepath.Join(keyfileMountDir, cd.Keyfile.Path))
+	} else {
+		args = append(args, "--key-file", cd.Keyfile.Path)
+		if cd.Keyfile.Offset > 0 {
+			args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.Offset))
+		}
+		if cd.Keyfile.Size > 0 {
+			args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
+		}
 	}
-	if cd.Keyfile.Size > 0 {
-		args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
-	}
+
 	args = append(args, "luksResume", cd.Name)
 
 	return Cryptsetup(args...)
@@ -199,6 +224,9 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 			}
 
 			// cryptkey=device:fstype:path
+			key.Device = resolveDevice(fields[0])
+			key.FSType = fields[1]
+			key.Path = fields[2]
 		}
 	}
 

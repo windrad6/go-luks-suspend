@@ -8,6 +8,8 @@ import (
 
 type Keyfile struct {
 	Path   string
+	Device string
+	FSType string
 	Offset int
 	Size   int
 }
@@ -56,10 +58,18 @@ func (k *Keyfile) Defined() bool {
 	return len(k.Path) > 0
 }
 
+func (k *Keyfile) inFilesystem() bool {
+	return len(k.Device) > 0
+}
+
 func (k *Keyfile) Available() bool {
 	if !k.Defined() {
 		return false
 	}
-	_, err := os.Stat(k.Path)
+	f := k.Path
+	if k.inFilesystem() {
+		f = k.Device
+	}
+	_, err := os.Stat(f)
 	return !os.IsNotExist(err)
 }
