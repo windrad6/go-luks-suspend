@@ -192,7 +192,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 				if err != nil {
 					continue // ignore malformed entry
 				}
-				key.Path = fields[0]
+				key.Path = resolveDevice(fields[0])
 				key.Offset = offset
 				key.Size = size
 				continue
@@ -207,6 +207,20 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 	}
 
 	return rootdev, key, nil
+}
+
+func resolveDevice(name string) string {
+	kv := strings.SplitN(name, "=", 2)
+	if len(kv) < 2 {
+		return name
+	}
+
+	switch kv[0] {
+	case "UUID", "LABEL", "PARTUUID", "PARTLABEL":
+		return filepath.Join("/dev/disk/by-"+strings.ToLower(kv[0]), kv[1])
+	default:
+		return name
+	}
 }
 
 var ignoreLinePattern = regexp.MustCompile(`\A\s*\z|\A\s*#`)
