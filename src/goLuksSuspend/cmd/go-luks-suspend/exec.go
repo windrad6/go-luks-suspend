@@ -14,7 +14,7 @@ import (
 
 	g "goLuksSuspend"
 
-	"github.com/guns/golibs/errjoin"
+	"github.com/guns/golibs/errutil"
 	"github.com/guns/golibs/process"
 )
 
@@ -121,7 +121,7 @@ func runSystemSuspendScripts(scriptarg string) error {
 
 	wg.Wait()
 
-	return errjoin.Join(" • ", errslice...)
+	return errutil.Join(" • ", errslice...)
 }
 
 func stopSystemServices(services []string) (stoppedServices []string, err error) {
@@ -192,12 +192,12 @@ func suspendInInitramfsChroot(cryptdevs []g.Cryptdevice) (err error) {
 	cmd.ExtraFiles = []*os.File{r} // child receives read end only
 
 	if err = cmd.Start(); err != nil {
-		return errjoin.Join(" • ", err, r.Close(), w.Close())
+		return errutil.First(err, r.Close(), w.Close())
 	}
 
 	defer func() {
-		werr := w.Close()                                // close write end once here
-		err = errjoin.Join(" • ", err, werr, cmd.Wait()) // reap child once here
+		werr := w.Close()                          // close write end once here
+		err = errutil.First(err, cmd.Wait(), werr) // reap child once here
 	}()
 
 	// Close our unused read end now
