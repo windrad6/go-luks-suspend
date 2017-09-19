@@ -216,7 +216,8 @@ func resolveDevice(name string) string {
 	}
 
 	switch kv[0] {
-	case "UUID", "LABEL", "PARTUUID", "PARTLABEL":
+	// ID= and PATH= are not supported by the encrypt hook, but are provided by udev
+	case "UUID", "LABEL", "PARTUUID", "PARTLABEL", "ID", "PATH":
 		return filepath.Join("/dev/disk/by-"+strings.ToLower(kv[0]), kv[1])
 	default:
 		return name
