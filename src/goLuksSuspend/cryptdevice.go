@@ -198,7 +198,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 				continue
 			}
 
-			// cryptkey=device:filesystem:path
+			// cryptkey=device:fstype:path
 		}
 	}
 

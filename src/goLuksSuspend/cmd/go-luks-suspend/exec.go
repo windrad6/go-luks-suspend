@@ -191,7 +191,7 @@ func suspendInInitramfsChroot(cryptdevs []g.Cryptdevice) (err error) {
 	cmd.Stderr = os.Stderr
 	cmd.ExtraFiles = []*os.File{r} // child receives read end only
 
-	if err := cmd.Start(); err != nil {
+	if err = cmd.Start(); err != nil {
 		return errjoin.Join(" • ", err, r.Close(), w.Close())
 	}
 
@@ -201,7 +201,7 @@ func suspendInInitramfsChroot(cryptdevs []g.Cryptdevice) (err error) {
 	}()
 
 	// Close our unused read end now
-	if err := r.Close(); err != nil {
+	if err = r.Close(); err != nil {
 		return err
 	}
 

@@ -23,7 +23,6 @@ var systemdServices = []string{
 }
 
 const initramfsDir = "/run/initramfs"
-const cryptdevicesPath = "/run/initramfs/run/cryptdevices"
 
 func main() {
 	g.ParseFlags()
