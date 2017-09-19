@@ -104,7 +104,11 @@ func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
 			return editreader.Append | editreader.Flush | editreader.Close
 		case 0x12: // ^R
 			if rootdev.Keyfile.Defined() {
-				fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
+				if rootdev.Keyfile.Available() {
+					fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
+				} else {
+					fmt.Println("\nKeyfile unavailable.")
+				}
 				return editreader.Kill | editreader.Flush | editreader.Close
 			}
 			return editreader.BasicLineEdit(i, b)
