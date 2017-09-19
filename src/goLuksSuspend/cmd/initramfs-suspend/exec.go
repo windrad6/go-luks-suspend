@@ -103,8 +103,11 @@ func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
 		case 0x12: // ^R
-			fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
-			return editreader.Kill | editreader.Flush | editreader.Close
+			if rootdev.Keyfile.Defined() {
+				fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
+				return editreader.Kill | editreader.Flush | editreader.Close
+			}
+			return editreader.BasicLineEdit(i, b)
 		case 0x14: // ^T
 			if g.DebugMode {
 				g.DebugShell()
