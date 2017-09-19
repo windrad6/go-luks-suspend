@@ -24,17 +24,14 @@ func TestKernelCmdlineParsing(t *testing.T) {
 		{
 			in:   "cryptdevice=UUID=d55cc35b-e99b-44ce-be89-4c573fccfb0b:cryptroot root=/dev/mapper/cryptroot\n",
 			name: "cryptroot",
-			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		{
 			in:   "cryptdevice=/dev/sda1:cryptroot1 cryptdevice=/dev/sda2:cryptroot2\n",
 			name: "cryptroot2",
-			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		{
 			in:   "cryptdevice=UUID=cd5dd4dc-5766-493e-b3c6-3d6dfd195082:cryptolvm:allow-discards root=/dev/mapper/system-root",
 			name: "cryptolvm",
-			key:  Keyfile{Path: "/crypto_keyfile.bin"},
 		},
 		// cryptkey=
 		{
