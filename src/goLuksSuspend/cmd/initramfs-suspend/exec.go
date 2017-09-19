@@ -110,6 +110,7 @@ func resumeRootCryptdevice(rootdev g.Cryptdevice) error {
 			return editreader.BasicLineEdit(i, b)
 		case 0x14: // ^T
 			if g.DebugMode {
+				fmt.Println()
 				g.DebugShell()
 				printPassphrasePrompt(rootdev)
 				return editreader.Kill
