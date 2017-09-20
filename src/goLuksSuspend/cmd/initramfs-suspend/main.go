@@ -9,6 +9,14 @@ import (
 func main() {
 	g.ParseFlags()
 
+	g.Debug("starting udevd from initramfs")
+	g.Assert(startUdevDaemon())
+
+	defer func() {
+		g.Debug("stopping udevd within initramfs")
+		g.Assert(stopUdevDaemon())
+	}()
+
 	r := os.NewFile(uintptr(3), "r")
 
 	g.Debug("loading cryptdevice names")
@@ -39,14 +47,6 @@ func main() {
 	} else {
 		g.Assert(g.SuspendToRAM())
 	}
-
-	g.Debug("starting udevd from initramfs")
-	g.Assert(startUdevDaemon())
-
-	defer func() {
-		g.Debug("stopping udevd within initramfs")
-		g.Assert(stopUdevDaemon())
-	}()
 
 loop:
 	for {
