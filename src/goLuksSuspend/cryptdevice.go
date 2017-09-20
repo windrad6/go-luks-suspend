@@ -139,14 +139,14 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 	args := make([]string, 0, 8)
 
 	if cd.Keyfile.inFilesystem() {
-		if err := os.Mkdir(keyfileMountDir, 0700); err != nil {
+		if err = os.Mkdir(keyfileMountDir, 0700); err != nil {
 			return err
 		}
 		defer func() {
 			err = errutil.First(err, os.Remove(keyfileMountDir))
 		}()
 
-		if err := syscall.Mount(cd.Keyfile.Device, keyfileMountDir, cd.Keyfile.FSType, syscall.MS_RDONLY, ""); err != nil {
+		if err = syscall.Mount(cd.Keyfile.Device, keyfileMountDir, cd.Keyfile.FSType, syscall.MS_RDONLY, ""); err != nil {
 			return err
 		}
 		defer func() {
