@@ -11,21 +11,30 @@ I/O and flush the key from memory, but special care must be taken when
 applying it to the root device.
 
 The `go-luks-suspend` program replaces the default suspend mechanism of
-systemd. It changes root to initramfs in order to perform the `luksSuspend`,
+systemd. It chroots to initramfs in order to perform the `luksSuspend`,
 suspend to RAM, and `luksResume` operations. It relies on the `shutdown`
 initcpio hook to provide access to the initramfs.
 
-This project is a rewrite of Vianney le Clément's excellent
-[arch-luks-suspend][] in the Go programming language. Rewriting in Go provides
-access to safe multithreading as well as better maintainability.
+This project is a rewrite of Vianney le Clément's excellent project
+[arch-luks-suspend][] in the Go programming language, and features the
+following improvements:
 
-As a case in point, while `arch-luks-suspend` only locks the root device,
-`go-luks-suspend` concurrently locks and unlocks all active LUKS volumes on
-suspend and wake.
+- All non-root LUKS volumes are locked on suspend.
+
+- Non-root LUKS volumes with keyfiles specified in `/etc/crypttab` are
+  concurrently unlocked on wake.
+
+- Press `CTRL-R` to unlock the root volume with a keyfile stored on
+  a removable device. (See [`cryptkey`][cryptkey].)
+
+- Press `Escape` to re-suspend the system after wake without having to unlock
+  it first. ([N.B.][escape])
 
 [Arch Linux]: https://www.archlinux.org/
 [dm-crypt with LUKS]: https://wiki.archlinux.org/index.php/Dm-crypt_with_LUKS
 [arch-luks-suspend]: https://github.com/vianney/arch-luks-suspend
+[cryptkey]: https://wiki.archlinux.org/index.php/Dm-crypt/System_configuration#cryptkey
+[escape]: https://github.com/guns/go-luks-suspend#q-my-system-doesnt-re-suspend-with-the-escape-key-after-wake-but-before-unlock
 
 
 Installation
@@ -50,7 +59,7 @@ Q. How do I unlock non-root LUKS volumes on wake?
 A. `go-luks-suspend` locks all active LUKS volumes on the system, but will
 only prompt the user to unlock the root volume on wake.
 
-To unlock a non-root LUKS volume, add an entry with a keyfile in
+To unlock a non-root LUKS volume on wake, add an entry with a keyfile in
 `/etc/crypttab`:
 
 ```ini
@@ -89,19 +98,8 @@ ExecStart=/usr/bin/openvt -ws -- /usr/lib/go-luks-suspend/go-luks-suspend -power
 ```
 
 
-Q. How do I run go-luks-suspend in debug mode?
-----------------------------------------------
-
-A. Run `go-luks-suspend` with the `-debug` flag to print debugging messages
-and to spawn a rescue shell on errors.
-
-```
-# /usr/lib/go-luks-suspend/go-luks-suspend -debug
-```
-
-
 Q. My system doesn't re-suspend with the Escape key after wake but before unlock!
-----------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 
 A. The kernel calls [`thaw_processes()`][thaw] after waking the system from
 suspend. This wakes up all processes on the system, any of which may initiate
@@ -118,6 +116,17 @@ after-wake-but-before-unlock. It is therefore recommended that you bring down
 the machine's network interfaces before suspend and restore them on wake.
 
 [thaw]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/power/freezing-of-tasks.txt
+
+
+Q. How do I run go-luks-suspend in debug mode?
+----------------------------------------------
+
+A. Run `go-luks-suspend` with the `-debug` flag to print debugging messages
+and to spawn a rescue shell on errors.
+
+```
+# /usr/lib/go-luks-suspend/go-luks-suspend -debug
+```
 
 
 Authors and license
