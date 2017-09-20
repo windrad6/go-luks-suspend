@@ -55,10 +55,8 @@ func printPassphrasePrompt(rootdev *g.Cryptdevice) {
 }
 
 func luksResume(dev *g.Cryptdevice, stdin io.Reader) error {
-	if dev.Keyfile.Available() {
-		if err := dev.ResumeWithKeyfile(); err == nil {
-			return nil
-		}
+	if err := dev.ResumeWithKeyfile(); err == nil {
+		return nil
 	}
 
 	printPassphrasePrompt(dev)
