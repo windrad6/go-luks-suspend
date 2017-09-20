@@ -19,7 +19,7 @@ func main() {
 
 	r := os.NewFile(uintptr(3), "r")
 
-	g.Debug("loading cryptdevice names")
+	g.Debug("loading cryptdevices")
 	cryptdevs, err := loadCryptdevices(r)
 	g.Assert(err)
 

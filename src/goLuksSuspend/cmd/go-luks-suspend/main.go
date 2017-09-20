@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	g "goLuksSuspend"
@@ -80,7 +79,6 @@ func main() {
 	g.Debug("stopping selected system services")
 	services, err := stopSystemServices(systemdServices)
 	g.Assert(err)
-	g.Debug("stopped " + strings.Join(services, ", "))
 
 	servicesRestarted := false
 
@@ -111,7 +109,7 @@ func main() {
 	servicesRestarted = true
 
 	defer func() {
-		g.Debug("resuming cryptdevices with keyfiles")
+		g.Debug("resuming non-root cryptdevices with keyfiles")
 		resumeCryptdevicesWithKeyfiles(cryptdevs)
 	}()
 
