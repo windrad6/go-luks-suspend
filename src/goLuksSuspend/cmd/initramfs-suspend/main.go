@@ -9,21 +9,28 @@ import (
 func main() {
 	g.ParseFlags()
 
-	g.Debug("starting udevd from initramfs")
-	g.Assert(startUdevDaemon())
-
-	defer func() {
-		g.Debug("stopping udevd within initramfs")
-		g.Assert(stopUdevDaemon())
-	}()
-
-	r := os.NewFile(uintptr(3), "r")
-
 	g.Debug("loading cryptdevices")
+	r := os.NewFile(uintptr(3), "r")
 	cryptdevs, err := loadCryptdevices(r)
 	g.Assert(err)
-
 	g.Assert(r.Close())
+
+	if len(cryptdevs) == 0 {
+		// This branch should be impossible.
+		g.Warn("no cryptdevices found, doing normal suspend")
+		g.Assert(g.SuspendToRAM())
+		return
+	}
+
+	if cryptdevs[0].Keyfile.Defined() {
+		g.Debug("starting udevd from initramfs")
+		g.Assert(startUdevDaemon())
+
+		defer func() {
+			g.Debug("stopping udevd within initramfs")
+			g.Assert(stopUdevDaemon())
+		}()
+	}
 
 	g.Debug("suspending cryptdevices")
 	g.Assert(suspendCryptdevices(cryptdevs))

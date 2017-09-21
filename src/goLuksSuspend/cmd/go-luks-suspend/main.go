@@ -51,7 +51,7 @@ func main() {
 	}()
 
 	if len(cryptdevs) == 0 {
-		g.Debug("no cryptdevices found, doing normal suspend")
+		g.Warn("no cryptdevices found, doing normal suspend")
 		g.Assert(g.SuspendToRAM())
 		return
 	}
