@@ -48,14 +48,13 @@ func main() {
 		g.Assert(g.SuspendToRAM())
 	}
 
-loop:
+	g.Debug("resuming root cryptdevice")
 	for {
-		g.Debug("resuming root cryptdevice")
 		var err error
 		for i := 0; i < 3; i++ {
 			err = resumeRootCryptdevice(&cryptdevs[0])
 			if err == nil {
-				break loop
+				return
 			}
 		}
 		// The -poweroff flag indicates the user's desire to take the
