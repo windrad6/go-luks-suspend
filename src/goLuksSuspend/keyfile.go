@@ -7,9 +7,9 @@ import (
 )
 
 type Keyfile struct {
-	Path   string
 	Device string
 	FSType string
+	Path   string
 	Offset int
 	Size   int
 }
