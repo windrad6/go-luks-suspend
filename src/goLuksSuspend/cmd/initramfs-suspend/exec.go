@@ -64,7 +64,7 @@ func luksResume(dev *g.Cryptdevice, stdin io.Reader) error {
 
 func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
 	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETSF, func(tty syscall.Termios) syscall.Termios {
-		tty.Lflag &^= syscall.ICANON | syscall.ECHO
+		tty.Lflag &^= syscall.ISIG | syscall.ICANON | syscall.ECHO
 		return tty
 	})
 
@@ -99,6 +99,8 @@ func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
 			g.Assert(restoreTTY())
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
+		case 0x03: // ^C
+			return editreader.Kill | editreader.Flush | editreader.Close
 		case 0x12: // ^R
 			if rootdev.Keyfile.Defined() {
 				if rootdev.Keyfile.Available() {
