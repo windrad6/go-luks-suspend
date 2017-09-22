@@ -15,7 +15,7 @@ conflicts=('arch-luks-suspend' 'arch-luks-suspend-git')
 package() {
   cd "$startdir"
   make clean
-  make DESTDIR="$pkgdir/" install
+  make DESTDIR="$pkgdir/" VERSION="v$pkgver" install
 }
 
 # vim:set ts=2 sw=2 et:

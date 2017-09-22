@@ -17,7 +17,15 @@ var IgnoreErrors = false
 func ParseFlags() {
 	debugFlag := flag.Bool("debug", false, "print debug messages and spawn a shell on errors")
 	poweroffFlag := flag.Bool("poweroff", false, "power off on errors and failure to unlock root device")
+	versionFlag := flag.Bool("version", false, "print version and exit")
+
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
 	DebugMode = *debugFlag
 	PoweroffOnError = *poweroffFlag
 }

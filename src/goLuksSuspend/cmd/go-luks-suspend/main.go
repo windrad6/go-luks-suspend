@@ -26,6 +26,9 @@ const initramfsDir = "/run/initramfs"
 func main() {
 	g.ParseFlags()
 
+	g.Debug("checking suspend program in initramfs")
+	g.Assert(checkInitramfsBinary(filepath.Join(initramfsDir, "suspend")))
+
 	g.Debug("gathering cryptdevices")
 	cryptdevs, cdmap, err := g.GetCryptdevices()
 	g.Assert(err)
@@ -64,9 +67,6 @@ func main() {
 			g.Debug(fmt.Sprintf("%#v", filesystems[i]))
 		}
 	}
-
-	g.Debug("checking for suspend program in initramfs")
-	g.Assert(checkRootOwnedAndExecutablePath(filepath.Join(initramfsDir, "suspend")))
 
 	g.Debug("preparing initramfs chroot")
 	g.Assert(bindInitramfs())

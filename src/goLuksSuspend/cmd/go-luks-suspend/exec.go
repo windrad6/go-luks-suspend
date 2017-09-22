@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -17,6 +18,43 @@ import (
 	"github.com/guns/golibs/errutil"
 	"github.com/guns/golibs/process"
 )
+
+func checkInitramfsBinary(path string) (err error) {
+	if err = checkRootOwnedAndExecutablePath(path); err != nil {
+		return err
+	}
+
+	cmd := exec.Command(path, "-version")
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+
+	defer func() { err = errutil.First(err, cmd.Wait()) }()
+
+	buf := make([]byte, 12)
+	n, err := out.Read(buf)
+	if err != nil {
+		return err
+	}
+
+	initramfsVersion := string(bytes.TrimSuffix(buf[:n], []byte{'\n'}))
+
+	if initramfsVersion != g.Version {
+		return fmt.Errorf(
+			"mismatched versions: go-luks-suspend %#v != %s %#v",
+			g.Version,
+			path,
+			initramfsVersion,
+		)
+	}
+
+	return nil
+}
 
 func checkRootOwnedAndExecutablePath(path string) error {
 	fi, err := os.Stat(path)
