@@ -7,11 +7,16 @@ post_install() {
 }
 
 post_upgrade() {
-  local oldver="$2"
+  local newver="$1" oldver="$2"
+
   if (("$(vercmp "$oldver" "1.2.0-1")" < 0)); then
     echo '[ATTENTION] go-luks-suspend must now be explicitly enabled!'
     echo '[ATTENTION] Run `systemctl enable go-luks-suspend.service` to enable it.'
   fi
+
+  if [[ "$newver" != "$oldver" ]]; then
+      echo 'You must reboot before attempting to suspend your system.'
+  fi
 }
 
-# vim:set ts=2 sw=2 et:
+# vim:set ft=sh ts=2 sw=2 et:

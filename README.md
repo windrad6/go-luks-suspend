@@ -21,11 +21,12 @@ following improvements:
 
 - All non-root LUKS volumes are locked on suspend.
 
+- Root LUKS volumes can be unlocked with a keyfile. (Press `CTRL-R` at the
+  prompt to unlock the root volume with a keyfile stored on a removable
+  device. See [`cryptkey`][cryptkey].)
+
 - Non-root LUKS volumes with keyfiles specified in `/etc/crypttab` are
   concurrently unlocked on wake.
-
-- Press `CTRL-R` to unlock the root volume with a keyfile stored on
-  a removable device. (See [`cryptkey`][cryptkey].)
 
 - Press `Escape` to re-suspend the system after wake without having to unlock
   it first. ([N.B.][escape])
