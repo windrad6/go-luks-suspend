@@ -4,28 +4,28 @@
 		{
 			"importpath": "github.com/guns/golibs/editreader",
 			"repository": "https://github.com/guns/golibs",
-			"revision": "0add9edc7415f4c3adddf3908e7d1d51c7f7b510",
+			"revision": "4a8a7e3d8cb0df7393fcc2f47fa9e4da6455dad4",
 			"branch": "master",
 			"path": "/editreader"
 		},
 		{
 			"importpath": "github.com/guns/golibs/errutil",
 			"repository": "https://github.com/guns/golibs",
-			"revision": "0add9edc7415f4c3adddf3908e7d1d51c7f7b510",
+			"revision": "4a8a7e3d8cb0df7393fcc2f47fa9e4da6455dad4",
 			"branch": "master",
 			"path": "/errutil"
 		},
 		{
 			"importpath": "github.com/guns/golibs/process",
 			"repository": "https://github.com/guns/golibs",
-			"revision": "0add9edc7415f4c3adddf3908e7d1d51c7f7b510",
+			"revision": "4a8a7e3d8cb0df7393fcc2f47fa9e4da6455dad4",
 			"branch": "master",
 			"path": "/process"
 		},
 		{
 			"importpath": "github.com/guns/golibs/sys",
 			"repository": "https://github.com/guns/golibs",
-			"revision": "c669e3799bb54d77a55b3b9dd975583314943908",
+			"revision": "6e9b962f9a5bbd782d53163b7718e091b3cdd780",
 			"branch": "linux",
 			"path": "/sys"
 		}

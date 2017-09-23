@@ -30,9 +30,8 @@ func main() {
 	g.ParseFlags()
 
 	g.Debug("disabling ISIG in TTY")
-	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETS, func(tty syscall.Termios) syscall.Termios {
+	restoreTTY, err := sys.AlterTTY(os.Stdin.Fd(), sys.TCSETS, func(tty *syscall.Termios) {
 		tty.Lflag &^= syscall.ISIG
-		return tty
 	})
 	if restoreTTY != nil {
 		defer func() {

@@ -6,7 +6,9 @@ GOPATH := "$(CURDIR):$(CURDIR)/vendor"
 all: go-luks-suspend initramfs-suspend
 
 update-version:
+ifdef VERSION
 	/usr/bin/sed -i "s/^const Version = .*/const Version = \"$(VERSION)\"/" src/goLuksSuspend/version.go
+endif
 
 go-luks-suspend: update-version
 	GOPATH=$(GOPATH) go build goLuksSuspend/cmd/go-luks-suspend
