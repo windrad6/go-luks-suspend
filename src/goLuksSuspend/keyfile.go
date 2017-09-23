@@ -7,11 +7,14 @@ import (
 )
 
 type Keyfile struct {
-	Device string
-	FSType string
-	Path   string
-	Offset int
-	Size   int
+	Device         string
+	FSType         string
+	Header         string
+	Path           string
+	Offset         int
+	Size           int
+	KeySlot        int
+	KeySlotDefined bool
 }
 
 func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
@@ -35,18 +38,30 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 			kv := strings.SplitN(opts[i], "=", 2)
 			if len(kv) < 2 {
 				continue
-			} else if kv[0] == "keyfile-offset" {
+			}
+
+			switch kv[0] {
+			case "keyfile-offset":
 				n, err := strconv.Atoi(kv[1])
 				if err != nil {
 					continue
 				}
 				k.Offset = n
-			} else if kv[0] == "keyfile-size" {
+			case "keyfile-size":
 				n, err := strconv.Atoi(kv[1])
 				if err != nil {
 					continue
 				}
 				k.Size = n
+			case "key-slot":
+				n, err := strconv.Atoi(kv[1])
+				if err != nil {
+					continue
+				}
+				k.KeySlot = n
+				k.KeySlotDefined = true
+			case "header":
+				k.Header = kv[1]
 			}
 		}
 	}
@@ -58,7 +73,7 @@ func (k *Keyfile) Defined() bool {
 	return len(k.Path) > 0
 }
 
-func (k *Keyfile) inFilesystem() bool {
+func (k *Keyfile) needsMount() bool {
 	return len(k.Device) > 0
 }
 
@@ -67,7 +82,7 @@ func (k *Keyfile) Available() bool {
 		return false
 	}
 	f := k.Path
-	if k.inFilesystem() {
+	if k.needsMount() {
 		f = k.Device
 	}
 	_, err := os.Stat(f)

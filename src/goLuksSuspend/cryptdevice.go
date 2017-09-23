@@ -136,9 +136,9 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 		return errNoKeyfile
 	}
 
-	args := make([]string, 0, 8)
+	args := make([]string, 0, 12)
 
-	if cd.Keyfile.inFilesystem() {
+	if cd.Keyfile.needsMount() {
 		if err = os.Mkdir(keyfileMountDir, 0700); err != nil {
 			return err
 		}
@@ -161,6 +161,12 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 		}
 		if cd.Keyfile.Size > 0 {
 			args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
+		}
+		if cd.Keyfile.KeySlotDefined {
+			args = append(args, "--key-slot", strconv.Itoa(cd.Keyfile.KeySlot))
+		}
+		if len(cd.Keyfile.Header) > 0 {
+			args = append(args, "--header", cd.Keyfile.Header)
 		}
 	}
 

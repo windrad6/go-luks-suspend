@@ -39,6 +39,12 @@ func TestParseKeyfileFromCrypttabEntry(t *testing.T) {
 			name: "crypt2",
 			key:  Keyfile{Path: "/root/.keys/crypt2.key", Size: 4096, Offset: 1024},
 		},
+		// Keyfiles with headers and key-slots
+		{
+			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key header=/root/.keys/crypt3.header,key-slot=2",
+			name: "crypt3",
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", Header: "/root/.keys/crypt3.header", KeySlot: 2, KeySlotDefined: true},
+		},
 	}
 
 	for _, row := range data {
