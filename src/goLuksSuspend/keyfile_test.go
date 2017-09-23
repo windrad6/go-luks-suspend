@@ -43,7 +43,7 @@ func TestParseKeyfileFromCrypttabEntry(t *testing.T) {
 		{
 			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key header=/root/.keys/crypt3.header,key-slot=2",
 			name: "crypt3",
-			key:  Keyfile{Path: "/root/.keys/crypt3.key", Header: "/root/.keys/crypt3.header", KeySlot: 2, KeySlotDefined: true},
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", Header: "/root/.keys/crypt3.header", KeySlot: 0x82},
 		},
 	}
 

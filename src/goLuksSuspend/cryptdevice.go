@@ -162,8 +162,8 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 		if cd.Keyfile.Size > 0 {
 			args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
 		}
-		if cd.Keyfile.KeySlotDefined {
-			args = append(args, "--key-slot", strconv.Itoa(cd.Keyfile.KeySlot))
+		if cd.Keyfile.KeySlotDefined() {
+			args = append(args, "--key-slot", strconv.Itoa(cd.Keyfile.GetKeySlot()))
 		}
 		if len(cd.Keyfile.Header) > 0 {
 			args = append(args, "--header", cd.Keyfile.Header)

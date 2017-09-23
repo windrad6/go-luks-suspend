@@ -7,14 +7,13 @@ import (
 )
 
 type Keyfile struct {
-	Device         string
-	FSType         string
-	Header         string
-	Path           string
-	Offset         int
-	Size           int
-	KeySlot        int
-	KeySlotDefined bool
+	Device  string
+	FSType  string
+	Header  string
+	Path    string
+	Offset  int
+	Size    int
+	KeySlot uint8
 }
 
 func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
@@ -54,12 +53,12 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 				}
 				k.Size = n
 			case "key-slot":
+				// LUKS currently only supports 8 key slots (23 September 2017)
 				n, err := strconv.Atoi(kv[1])
-				if err != nil {
+				if err != nil || n >= 0x80 {
 					continue
 				}
-				k.KeySlot = n
-				k.KeySlotDefined = true
+				k.KeySlot = uint8(n | 0x80)
 			case "header":
 				k.Header = kv[1]
 			}
@@ -87,4 +86,12 @@ func (k *Keyfile) Available() bool {
 	}
 	_, err := os.Stat(f)
 	return !os.IsNotExist(err)
+}
+
+func (k *Keyfile) KeySlotDefined() bool {
+	return k.KeySlot&0x80 > 0
+}
+
+func (k *Keyfile) GetKeySlot() int {
+	return int(k.KeySlot & 0x7f)
 }
