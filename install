@@ -1,6 +1,6 @@
 post_install() {
-  echo '1) Enable the udev, encrypt, and shutdown hooks in'
-  echo '   /etc/mkinitcpio.conf and run `mkinitcpio -p linux`'
+  echo '1) Enable the udev, encrypt, shutdown, and suspend hooks'
+  echo '   in /etc/mkinitcpio.conf and run `mkinitcpio -p linux`'
   echo '2) Enable the go-luks-suspend service with:'
   echo '   `systemctl enable go-luks-suspend.service`'
   echo '3) Reboot'
