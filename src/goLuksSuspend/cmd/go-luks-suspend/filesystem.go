@@ -71,7 +71,7 @@ func hasWriteBarrier(fstype, mountopts string) bool {
 	switch fstype {
 	// ReiserFS supports write barriers, but the option syntax appears to
 	// be unconventional. Since it's fading into obscurity, just ignore it.
-	case "ext2", "ext3", "ext4", "btrfs":
+	case "ext2", "ext3", "ext4":
 		for _, o := range strings.Split(mountopts, ",") {
 			// Write barriers are on by default and do not show up
 			// in the list of mount options, so check for the negative
