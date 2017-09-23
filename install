@@ -1,6 +1,6 @@
 post_install() {
-  echo '1) Enable the udev, encrypt, shutdown, and suspend hooks'
-  echo '   in /etc/mkinitcpio.conf and run `mkinitcpio -p linux`'
+  echo '1) Enable the udev, encrypt, and shutdown hooks in'
+  echo '   /etc/mkinitcpio.conf and run `mkinitcpio -p linux`'
   echo '2) Enable the go-luks-suspend service with:'
   echo '   `systemctl enable go-luks-suspend.service`'
   echo '3) Reboot'
@@ -14,8 +14,18 @@ post_upgrade() {
     echo '[ATTENTION] Run `systemctl enable go-luks-suspend.service` to enable it.'
   fi
 
+  if (("$(vercmp "$oldver" "1.4.2-1")" < 0)); then
+    echo '[ATTENTION] Upgrading go-luks-suspend no longer requires a reboot unless indicated.'
+  fi
+
   if [[ "$newver" != "$oldver" ]]; then
-      echo 'You must reboot before attempting to suspend your system.'
+    local src='/usr/lib/go-luks-suspend/initramfs-suspend'
+    local dst='/run/initramfs/suspend'
+    if [[ -e "$src" && -e "$dst" ]]; then
+      install -m755 "$src" "$dst"
+    else
+      echo '[ATTENTION] Reboot required to complete upgrade.'
+    fi
   fi
 }
 

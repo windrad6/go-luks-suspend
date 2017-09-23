@@ -45,7 +45,7 @@ Installation
    Alternatively, run `make install` as root.
 
 2. Edit `/etc/mkinitcpio.conf` and make sure the following hooks are enabled:<br>
-   `udev`, `encrypt`, `shutdown`, `suspend`.
+   `udev`, `encrypt`, and `shutdown`.
 
 3. Rebuild the initramfs: `mkinitcpio -p linux`.
 
