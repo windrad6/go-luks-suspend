@@ -53,13 +53,20 @@ func printPassphrasePrompt(rootdev *g.Cryptdevice) {
 	fmt.Printf("\nEnter passphrase for %s: ", rootdev.Name)
 }
 
-func luksResume(dev *g.Cryptdevice, stdin io.Reader) error {
-	if err := dev.ResumeWithKeyfile(); err == nil {
-		return nil
+func luksResume(cd *g.Cryptdevice, stdin io.Reader) error {
+	if cd.Keyfile.Defined() {
+		if cd.Keyfile.Available() {
+			fmt.Printf("Attempting to unlock %s with keyfile...\n", cd.Name)
+			if err := cd.ResumeWithKeyfile(); err == nil {
+				return nil
+			}
+		} else {
+			fmt.Println("Keyfile unavailable.")
+		}
 	}
 
-	printPassphrasePrompt(dev)
-	return dev.Resume(stdin)
+	printPassphrasePrompt(cd)
+	return cd.Resume(stdin)
 }
 
 func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
@@ -99,14 +106,11 @@ func resumeRootCryptdevice(rootdev *g.Cryptdevice) error {
 			ttyRestored = true
 			return editreader.Append | editreader.Flush | editreader.Close
 		case 0x03: // ^C
+			fmt.Println()
 			return editreader.Kill | editreader.Flush | editreader.Close
 		case 0x12: // ^R
 			if rootdev.Keyfile.Defined() {
-				if rootdev.Keyfile.Available() {
-					fmt.Printf("\nAttempting to unlock %s with keyfile...\n", rootdev.Name)
-				} else {
-					fmt.Println("\nKeyfile unavailable.")
-				}
+				fmt.Println()
 				return editreader.Kill | editreader.Flush | editreader.Close
 			}
 			return editreader.BasicLineEdit(i, b)

@@ -132,10 +132,6 @@ var errNoKeyfile = errors.New("no keyfile")
 const keyfileMountDir = "/go-luks-suspend-mnt"
 
 func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
-	if !cd.Keyfile.Available() {
-		return errNoKeyfile
-	}
-
 	args := make([]string, 0, 12)
 
 	if cd.Keyfile.needsMount() {

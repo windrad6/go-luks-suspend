@@ -53,7 +53,7 @@ func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
 				}
 				k.Size = n
 			case "key-slot":
-				// LUKS currently only supports 8 key slots (23 September 2017)
+				// LUKS currently only supports 8 key slots
 				n, err := strconv.Atoi(kv[1])
 				if err != nil || n >= 0x80 {
 					continue
