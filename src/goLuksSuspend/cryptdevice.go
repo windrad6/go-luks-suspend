@@ -48,7 +48,8 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
 		if err != nil {
 			return nil, nil, err
-		} else if !bytes.Equal(uuid[:len(luksUUIDPrefix)], luksUUIDPrefix) {
+		} else if len(uuid) < len(luksUUIDPrefix) ||
+			!bytes.Equal(uuid[:len(luksUUIDPrefix)], luksUUIDPrefix) {
 			continue
 		}
 
@@ -67,7 +68,7 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 			return nil, nil, err
 		}
 
-		cd.Name = string(bytes.TrimSpace(name))
+		cd.Name = string(bytes.TrimSuffix(name, []byte{'\n'}))
 
 		if cd.Name == rootdev {
 			if cryptdevs[0].IsRootDevice {
