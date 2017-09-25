@@ -48,7 +48,7 @@ func TestParseKeyfileFromCrypttabEntry(t *testing.T) {
 	}
 
 	for _, row := range data {
-		name, key := parseKeyfileFromCrypttabEntry(row.in)
+		name, key := parseCrypttabEntry(row.in)
 
 		if name != row.name {
 			t.Errorf("%#v != %#v", name, row.name)

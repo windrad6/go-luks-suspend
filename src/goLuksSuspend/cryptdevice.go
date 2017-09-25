@@ -34,7 +34,7 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 		return nil, nil, err
 	}
 
-	rootdev, rootkey, err := getLUKSParamsFromKernelCmdline()
+	rootdev, rootkey, err := parseKernelCmdline()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,9 +172,10 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 	return Cryptsetup(args...)
 }
 
+// This is a variable to facilitate testing.
 var kernelCmdline = "/proc/cmdline"
 
-func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
+func parseKernelCmdline() (rootdev string, key Keyfile, err error) {
 	buf, err := ioutil.ReadFile(kernelCmdline)
 	if err != nil {
 		return "", Keyfile{}, err
@@ -190,7 +191,10 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 		kv := strings.SplitN(params[i], "=", 2)
 		if len(kv) < 2 {
 			continue
-		} else if kv[0] == "cryptdevice" {
+		}
+
+		switch kv[0] {
+		case "cryptdevice":
 			// cryptdevice=device:dmname:options
 			fields := strings.SplitN(kv[1], ":", 3)
 			if len(fields) < 2 {
@@ -198,7 +202,7 @@ func getLUKSParamsFromKernelCmdline() (rootdev string, key Keyfile, err error) {
 			}
 
 			rootdev = fields[1]
-		} else if kv[0] == "cryptkey" {
+		case "cryptkey":
 			fields := strings.SplitN(kv[1], ":", 3)
 			if len(fields) < 2 {
 				continue
@@ -271,7 +275,7 @@ func AddKeyfilesFromCrypttab(cdmap map[string]*Cryptdevice) error {
 			continue
 		}
 
-		name, key := parseKeyfileFromCrypttabEntry(string(line))
+		name, key := parseCrypttabEntry(string(line))
 		if len(name) == 0 {
 			continue
 		}

@@ -59,7 +59,7 @@ func TestKernelCmdlineParsing(t *testing.T) {
 			t.Errorf("unexpected error: %#v", err)
 		}
 
-		name, key, err := getLUKSParamsFromKernelCmdline()
+		name, key, err := parseKernelCmdline()
 		if name != row.name {
 			t.Errorf("%#v != %#v", name, row.name)
 		}

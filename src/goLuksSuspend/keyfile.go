@@ -16,7 +16,7 @@ type Keyfile struct {
 	KeySlot uint8
 }
 
-func parseKeyfileFromCrypttabEntry(line string) (name string, key Keyfile) {
+func parseCrypttabEntry(line string) (name string, key Keyfile) {
 	fields := strings.Fields(line)
 
 	// fields: name, device, keyfile, options
