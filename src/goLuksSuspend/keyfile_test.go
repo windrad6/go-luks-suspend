@@ -45,6 +45,26 @@ func TestParseKeyfileFromCrypttabEntry(t *testing.T) {
 			name: "crypt3",
 			key:  Keyfile{Path: "/root/.keys/crypt3.key", Header: "/root/.keys/crypt3.header", KeySlot: 0x82},
 		},
+		{
+			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key key-slot=0",
+			name: "crypt3",
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", KeySlot: 0x80},
+		},
+		{
+			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key key-slot=127",
+			name: "crypt3",
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", KeySlot: 0xff},
+		},
+		{
+			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key key-slot=128",
+			name: "crypt3",
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", KeySlot: 0},
+		},
+		{
+			in:   "crypt3 UUID=f7dd3b0e-b7ae-4f7c-8c31-4895e4c23231 /root/.keys/crypt3.key key-slot=-1",
+			name: "crypt3",
+			key:  Keyfile{Path: "/root/.keys/crypt3.key", KeySlot: 0},
+		},
 	}
 
 	for _, row := range data {

@@ -11,8 +11,8 @@ type Keyfile struct {
 	FSType  string
 	Header  string
 	Path    string
-	Offset  int
-	Size    int
+	Offset  uint64
+	Size    uint64
 	KeySlot uint8
 }
 
@@ -41,21 +41,21 @@ func parseCrypttabEntry(line string) (name string, key Keyfile) {
 
 			switch kv[0] {
 			case "keyfile-offset":
-				n, err := strconv.Atoi(kv[1])
+				n, err := strconv.ParseUint(kv[1], 10, 0)
 				if err != nil {
 					continue
 				}
 				k.Offset = n
 			case "keyfile-size":
-				n, err := strconv.Atoi(kv[1])
+				n, err := strconv.ParseUint(kv[1], 10, 0)
 				if err != nil {
 					continue
 				}
 				k.Size = n
 			case "key-slot":
 				// LUKS currently only supports 8 key slots
-				n, err := strconv.Atoi(kv[1])
-				if err != nil || n >= 0x80 {
+				n, err := strconv.ParseUint(kv[1], 10, 7)
+				if err != nil {
 					continue
 				}
 				k.KeySlot = uint8(n | 0x80)
@@ -92,6 +92,6 @@ func (k *Keyfile) KeySlotDefined() bool {
 	return k.KeySlot&0x80 > 0
 }
 
-func (k *Keyfile) GetKeySlot() int {
-	return int(k.KeySlot & 0x7f)
+func (k *Keyfile) GetKeySlot() uint64 {
+	return uint64(k.KeySlot & 0x7f)
 }

@@ -154,13 +154,13 @@ func (cd *Cryptdevice) ResumeWithKeyfile() (err error) {
 	} else {
 		args = append(args, "--key-file", cd.Keyfile.Path)
 		if cd.Keyfile.Offset > 0 {
-			args = append(args, "--keyfile-offset", strconv.Itoa(cd.Keyfile.Offset))
+			args = append(args, "--keyfile-offset", strconv.FormatUint(cd.Keyfile.Offset, 10))
 		}
 		if cd.Keyfile.Size > 0 {
-			args = append(args, "--keyfile-size", strconv.Itoa(cd.Keyfile.Size))
+			args = append(args, "--keyfile-size", strconv.FormatUint(cd.Keyfile.Size, 10))
 		}
 		if cd.Keyfile.KeySlotDefined() {
-			args = append(args, "--key-slot", strconv.Itoa(cd.Keyfile.GetKeySlot()))
+			args = append(args, "--key-slot", strconv.FormatUint(cd.Keyfile.GetKeySlot(), 10))
 		}
 		if len(cd.Keyfile.Header) > 0 {
 			args = append(args, "--header", cd.Keyfile.Header)
@@ -218,9 +218,9 @@ func parseKernelCmdline() (rootdev string, key Keyfile, err error) {
 				continue
 			}
 
-			if offset, err := strconv.Atoi(fields[1]); err == nil {
+			if offset, err := strconv.ParseUint(fields[1], 10, 0); err == nil {
 				// cryptkey=device:offset:size
-				size, err := strconv.Atoi(fields[2])
+				size, err := strconv.ParseUint(fields[2], 10, 0)
 				if err != nil {
 					continue // ignore malformed entry
 				}
