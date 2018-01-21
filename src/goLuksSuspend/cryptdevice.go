@@ -26,7 +26,7 @@ type Cryptdevice struct {
 	IsRootDevice bool
 }
 
-var luksUUIDPrefix = []byte("CRYPT-LUKS1-")
+var luksUUIDPrefix = regexp.MustCompile(`\ACRYPT-LUKS[12]-`)
 
 func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 	dirs, err := filepath.Glob("/sys/block/*/dm")
@@ -48,8 +48,7 @@ func GetCryptdevices() ([]Cryptdevice, map[string]*Cryptdevice, error) {
 		uuid, err := ioutil.ReadFile(filepath.Join(dirs[i], "uuid"))
 		if err != nil {
 			return nil, nil, err
-		} else if len(uuid) < len(luksUUIDPrefix) ||
-			!bytes.Equal(uuid[:len(luksUUIDPrefix)], luksUUIDPrefix) {
+		} else if !luksUUIDPrefix.Match(uuid) {
 			continue
 		}
 
