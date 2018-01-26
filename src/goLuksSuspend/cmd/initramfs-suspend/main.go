@@ -49,11 +49,8 @@ func main() {
 		g.Assert(err)
 	}
 
-	if g.DebugMode {
-		g.Debug("debug: skipping suspend to RAM")
-	} else {
-		g.Assert(g.SuspendToRAM())
-	}
+	g.Debug("suspending to RAM")
+	g.Assert(g.SuspendToRAM())
 
 	g.Debug("resuming root cryptdevice")
 	for {
