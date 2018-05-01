@@ -3,6 +3,8 @@ package goLuksSuspend
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -118,6 +120,38 @@ func (cd *Cryptdevice) Suspended() bool {
 	}
 
 	return buf[0] == '1'
+}
+
+func (cd *Cryptdevice) ResumeYubikey(stdin io.Reader) error {
+	//read string from console
+	reader := bufio.NewReader(os.Stdin)
+	passphrase, _ := reader.ReadString('\n')
+	passphrase = strings.Trim(passphrase, "\n")
+
+	//calc sha256
+	hash := sha256.New()
+	hash.Write([]byte(passphrase))
+	sha256Str := hex.EncodeToString(hash.Sum(nil))
+
+	//read response from yubikey
+	chalResp := exec.Command("/usr/bin/ykchalresp", "-1", sha256Str)
+	var outputBuf bytes.Buffer
+	chalResp.Stdout = &outputBuf
+	Run(chalResp)
+	chalRespStr := outputBuf.String()
+
+	var keyBuffer bytes.Buffer
+	keyBuffer.WriteString(sha256Str)
+	keyBuffer.WriteString(chalRespStr)
+
+	cmd := exec.Command("/usr/bin/cryptsetup", "--tries=1", "luksResume", cd.Name)
+	stdin1, _ := cmd.StdinPipe()
+	//cmd.Stdin = stdin1
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	stdin1.Write([]byte(keyBuffer.String()))
+
+	return Run(cmd)
 }
 
 func (cd *Cryptdevice) Resume(stdin io.Reader) error {

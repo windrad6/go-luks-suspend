@@ -1,7 +1,10 @@
 go-luks-suspend
 ===============
 
-A package for [Arch Linux][] to lock LUKS encrypted volumes on suspend.
+A package for [Arch Linux][] to lock and unlock LUKS encrypted volumes on suspend.
+It is possible to use this package with a yubikey challenge response.
+The yubikey challenge response unlock algorithm can be combined with https://github.com/agherzan/yubikey-full-disk-encryption.
+To use the yubikey with this project the function Resume in cryptdevice.go must be removed and the function ResumeYubikey must be renamed to Resume.
 
 When using [dm-crypt with LUKS][] to set up full system encryption, the
 encryption key is kept in memory when suspending the system. This drawback
